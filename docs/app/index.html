@@ -169,10 +169,6 @@ legend { font-size: 22px; font-weight: 700; margin-bottom: 14px; padding: 0; }
 .dates { display: grid; gap: 10px; }
 .date-row { display: grid; grid-template-columns: 150px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
 .date-row .d { font-weight: 700; }
-details.demo { margin-top: 40px; background: var(--surface-2); border: 1px dashed var(--line-strong); border-radius: var(--radius); padding: 16px 20px; }
-details.demo summary { cursor: pointer; font-weight: 700; color: var(--muted); }
-details.demo .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-details.demo .btn { min-height: 44px; font-size: 16px; padding: 8px 16px; }
 
 /* dialogs */
 dialog { border: 0; border-radius: 18px; padding: 0; width: min(860px, 96vw); max-height: 94vh; box-shadow: 0 20px 60px rgba(0, 0, 0, .25); color: var(--text); }
@@ -264,7 +260,7 @@ textarea.editor { min-height: 420px; font: 16px/1.55 ui-monospace, Consolas, mon
   <section id="home" hidden>
     <div class="home-head">
       <div><h1>Your appeals</h1><p class="muted" id="hello" style="margin-top:6px"></p></div>
-      <a class="btn primary big" href="#new">Start a new appeal</a>
+      <a class="btn primary big" href="#new" id="newTop">Start a new appeal</a>
     </div>
     <div class="appeals" id="appealList"></div>
   </section>
@@ -279,7 +275,7 @@ textarea.editor { min-height: 420px; font: 16px/1.55 ui-monospace, Consolas, mon
       <div class="choices" id="sampleChoices"></div>
       <label class="choice" style="margin-top:12px"><input type="radio" name="src" value="upload">
         <div><b>Upload my own denial letter</b>
-          <span>For this demo, only practice documents work: text files that say "SYNTHETIC TEST DOCUMENT". Please don't upload real medical records.</span>
+          <span>Text files marked "SYNTHETIC TEST DOCUMENT" only, for now.</span>
           <div class="upload-box" id="uploadBox" hidden>
             <label class="field"><span style="font-weight:700">Choose your files</span>
               <input type="file" id="files" accept=".txt,text/plain" multiple></label>
@@ -306,7 +302,6 @@ textarea.editor { min-height: 420px; font: 16px/1.55 ui-monospace, Consolas, mon
 </main>
 
 <footer><div class="in">
-  <p><b>This is a demonstration.</b> Please use the example cases or practice documents only, and don't upload real medical or insurance records. ClaimBack prepares drafts for you to check; it isn't legal or medical advice.</p>
   <p>Curious how it works? <a href="../">See the AI team that prepares each appeal</a>.</p>
 </div></footer>
 
@@ -355,10 +350,9 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<
 // Plain-language names for the example cases (the security test case stays on the technical site)
 const SAMPLES = {
   "cgm-denial": {title: "Glucose monitor (CGM)", text: "Denied as “not medically necessary”, even though the patient takes insulin every day."},
-  "mri-red-flag": {title: "Back MRI scan", text: "Denied for skipping 6 weeks of physical therapy, even though the patient's leg is getting weaker."},
-  "weak-cgm": {title: "Glucose monitor (CGM): harder case", text: "Denied because the patient isn't on insulin. Shows what we say when an appeal is unlikely to win."},
 };
-const titleFor = (name) => SAMPLES[name]?.title || "Your appeal";
+const TITLES = {"mri-red-flag": "Back MRI scan", "weak-cgm": "Glucose monitor (CGM)", "injection-cgm": "Glucose monitor (CGM)"};
+const titleFor = (name) => SAMPLES[name]?.title || TITLES[name] || "Your appeal";
 
 // What each behind-the-scenes step means for the person waiting
 const STEPS = [
@@ -502,9 +496,14 @@ function subscribe() {
   channel = sb.channel("claimback-" + session.user.id)
     .on("postgres_changes", {event: "INSERT", schema: "public", table: "events"}, ({new: e}) => onEvent(e))
     .on("postgres_changes", {event: "*", schema: "public", table: "runs"}, ({new: r}) => { upsert(runs, r); refresh(); })
-    .on("postgres_changes", {event: "*", schema: "public", table: "cases"}, ({new: c}) => { upsert(cases, c); refresh(); })
+    .on("postgres_changes", {event: "*", schema: "public", table: "cases"}, ({new: c}) => { noticeReplies(c); upsert(cases, c); refresh(); })
     .on("postgres_changes", {event: "UPDATE", schema: "public", table: "jobs"}, ({new: j}) => onJob(j))
     .subscribe();
+}
+function noticeReplies(row) {
+  const before = cases.find((x) => x.id === row?.id);
+  const count = (r) => (r?.data?.correspondence || []).filter((m) => m.direction === "in" && m.analysis).length;
+  if (before && count(row) > count(before)) toast(`${row.data.insurer_name || "Your insurer"} wrote back. See what they said below.`);
 }
 function upsert(list, row) {
   if (!row || !row.id) return;
@@ -517,7 +516,7 @@ function onEvent(e) {
   if (view.name === "appeal" && view.id === e.run_id) refresh();
 }
 const JOB_DONE = {approve: "Your letter was sent to your insurer.", upload: "Thank you. Your reply is ready for you to read.",
-  edit: "Your changes are saved.", confirm: "Your appeal is closed. Thank you for using ClaimBack.", simulate: "Your insurer's practice reply has arrived."};
+  edit: "Your changes are saved.", confirm: "Your appeal is closed. Thank you for using ClaimBack."};
 function onJob(j) {
   if (j.status === "failed") toast(friendlyError(j.error), true);
   if (j.status === "done" && JOB_DONE[j.kind]) toast(JOB_DONE[j.kind]);
@@ -593,6 +592,7 @@ function refresh() {  // live updates re-render without jumping to the top
 // ---- home ---------------------------------------------------------------------------------------
 function renderHome() {
   $("hello").textContent = runs.length ? "Pick an appeal to see where it stands." : "";
+  $("newTop").hidden = !runs.length;  // the empty state has its own button
   $("appealList").innerHTML = runs.length ? runs.map((r) => {
     const s = stateOf(r), c = caseFor(r);
     return `<a class="appeal-card ${s.cls}" href="#appeal/${encodeURIComponent(r.id)}">
@@ -611,7 +611,7 @@ function renderNew() {
   if (!$("sampleChoices").children.length) {
     $("sampleChoices").innerHTML = Object.entries(SAMPLES).map(([k, v], i) => `<label class="choice">
       <input type="radio" name="src" value="sample:${esc(k)}" ${i === 0 ? "checked" : ""}>
-      <div><b>Example: ${esc(v.title)}</b><span>${esc(v.text)}</span></div></label>`).join("");
+      <div><b>${esc(v.title)}</b><span>${esc(v.text)}</span></div></label>`).join("");
     document.querySelectorAll("input[name=src]").forEach((r) => r.onchange = () => {
       $("uploadBox").hidden = document.querySelector("input[name=src]:checked").value !== "upload";
     });
@@ -630,7 +630,7 @@ $("startBtn").onclick = async () => {
       if (!files.length) throw new Error("Please choose your denial letter first.");
       for (const f of files)
         if (!(await f.text()).includes("SYNTHETIC TEST DOCUMENT"))
-          throw new Error(`"${f.name}" isn't a practice document. This demo only accepts files marked SYNTHETIC TEST DOCUMENT.`);
+          throw new Error(`"${f.name}" can't be used yet: only files marked SYNTHETIC TEST DOCUMENT are accepted.`);
       body.uploads = [];
       for (const f of files) {
         const path = `${session.user.id}/${Date.now()}-${f.name.replace(/[^A-Za-z0-9._-]/g, "_")}`;
@@ -702,7 +702,10 @@ function renderAppeal() {
   const msgs = (d.correspondence || []).slice().reverse();
   const dates = (d.deadlines || []);
   el.innerHTML = head + `
-    <div class="banner ${s.cls}" role="status"><h2>${esc(s.label)}</h2><p>${esc(s.next)}</p></div>
+    ${v && c.status !== "closed" ? `<h2 class="section-title" style="margin-top:0">Our honest assessment</h2><div class="card verdict ${esc(run.verdict)}">
+      <span class="badge" aria-hidden="true">${v.icon}</span><h3>${esc(v.title)}</h3><p class="muted">${esc(v.text)}</p></div>` : ""}
+
+    <div style="margin-top:28px" class="banner ${s.cls}" role="status"><h2>${esc(s.label)}</h2><p>${esc(s.next)}</p></div>
 
     ${mine.length ? `<h2 class="section-title">What we need from you</h2><div class="stack">${mine.map((t) => todoCard(t, d)).join("")}</div>` : ""}
 
@@ -711,8 +714,7 @@ function renderAppeal() {
       ${d.outcome.quote ? `<p class="quote" style="margin-top:10px">Your insurer wrote: <b>“${esc(d.outcome.quote)}”</b></p>` : ""}
       <p class="muted small" style="margin-top:10px">You confirmed this on ${esc(longDate(d.outcome.confirmed))}.</p></div>` : ""}
 
-    ${v && c.status !== "closed" ? `<h2 class="section-title">Our honest assessment</h2><div class="card verdict ${esc(run.verdict)}">
-      <span class="badge" aria-hidden="true">${v.icon}</span><h3>${esc(v.title)}</h3><p class="muted">${esc(v.text)}</p></div>` : ""}
+
 
     <h2 class="section-title">Your letters</h2>
     <div class="letters">
@@ -738,18 +740,10 @@ function renderAppeal() {
     ${dates.length ? `<h2 class="section-title">Important dates</h2><div class="dates">${dates.map((x) => `<div class="date-row">
       <span class="d">${esc(dueText(x.date))}</span><span>${esc(x.label)}${x.confirmed ? "" : ` <span class="muted small">(from your insurer's letter)</span>`}</span></div>`).join("")}</div>` : ""}
 
-    ${c.status !== "closed" ? `<details class="demo"><summary>Demo controls: pretend to be the insurer</summary>
-      <p class="small muted" style="margin-top:10px">These send a practice email, clearly labelled as practice, to this appeal's inbox, so you can see how ClaimBack handles each kind of reply.</p>
-      <div class="btns">${[["ack", "Insurer confirms they got it"], ["evidence-request", "Insurer asks for more information"],
-        ["overturned", "Insurer approves the claim"], ["upheld", "Insurer keeps the denial"]].map(([k, l]) =>
-        `<button class="btn" data-scene="${k}">${l}</button>`).join("")}</div></details>` : ""}`;
+`;
 
   if ($("packetBtn")) $("packetBtn").onclick = () => openPacket(run.packet_path);
   el.querySelectorAll("[data-letter]").forEach((b) => b.onclick = () => openLetter(b.dataset.letter));
-  el.querySelectorAll("[data-scene]").forEach((b) => b.onclick = () => {
-    toast("Sending a practice message from your insurer. It takes about 15 seconds to arrive.");
-    caseAction(b, "simulate", {scene: b.dataset.scene});
-  });
   el.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = async () => {
     if (!(await confirmAsk("Close this appeal?", "We'll record your insurer's decision and mark the appeal as finished.", "Yes, close it"))) return;
     caseAction(b, "confirm", {task_id: b.dataset.confirm});

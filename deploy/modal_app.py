@@ -102,6 +102,10 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
             result = ops.open_case_for_run(args["run_id"])
         elif kind == "approve":
             result = {"message_id": ops.approve(owner, args["case_id"], args["outbox_id"])}
+            from claimback.cases import Case
+            letter = next((o for o in Case.load(args["case_id"]).outbox if o["id"] == args["outbox_id"]), {})
+            if os.environ.get("SCRIPTED_INSURER", "1") == "1" and letter.get("kind") in INSURER_SCRIPT:
+                scripted_insurer.spawn(owner, args["case_id"], letter["kind"])
         elif kind == "confirm":
             ops.confirm(owner, args["case_id"], args["task_id"])
         elif kind == "edit":
@@ -141,6 +145,24 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
     volume.commit()
     _job(job_id, status="done", result=result if isinstance(result, dict) else {"value": result})
     return result
+
+
+# ---- scripted insurer for the demo --------------------------------------------------------
+# What the simulated insurer does after each kind of letter is sent: (wait in seconds, scene).
+# Every message it sends is marked as simulated; it goes through case_ops, so it's serialized
+# with everything else that touches the case.
+INSURER_SCRIPT = {
+    "initial_appeal": [(20, "ack"), (25, "evidence-request")],
+    "evidence_response": [(30, "overturned")],
+}
+
+
+@app.function(**WORKER, timeout=10 * 60)
+def scripted_insurer(owner: str, case_id: str, letter_kind: str) -> None:
+    import time
+    for wait, scene in INSURER_SCRIPT.get(letter_kind, []):
+        time.sleep(wait)
+        case_ops.remote("simulate", owner, {"case_id": case_id, "scene": scene}, None)
 
 
 @app.function(**WORKER, schedule=modal.Cron("*/2 * * * *"), timeout=15 * 60)
