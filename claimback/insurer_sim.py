@@ -60,7 +60,7 @@ def send_scene(case_id: str, scene: str) -> str:
     connector = get_connector()
     if connector.name == "imap" and sim_addr and sim_pw:
         from .connectors.email_imap import IMAPConnector
-        connector, sender = IMAPConnector(sim_addr, sim_pw), sim_addr
+        connector, sender = IMAPConnector(sim_addr.strip(), sim_pw.replace(" ", "")), sim_addr.strip()
     elif connector.name == "imap":
         sender = connector.address  # no second account: send from the ClaimBack inbox, still marked simulated
     else:

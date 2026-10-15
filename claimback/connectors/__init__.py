@@ -14,6 +14,8 @@ def get_connector():
     from .. import llm  # noqa: F401  loads .env
     if os.environ.get("CLAIMBACK_FAKE_MAIL") != "1" and os.environ.get("CLAIMBACK_EMAIL_APP_PASSWORD"):
         from .email_imap import IMAPConnector
-        return IMAPConnector(os.environ["CLAIMBACK_EMAIL"], os.environ["CLAIMBACK_EMAIL_APP_PASSWORD"])
+        # Google displays app passwords in groups of four; the spaces aren't part of it
+        return IMAPConnector(os.environ["CLAIMBACK_EMAIL"].strip(),
+                             os.environ["CLAIMBACK_EMAIL_APP_PASSWORD"].replace(" ", ""))
     from .fake import FakeConnector
     return FakeConnector()
