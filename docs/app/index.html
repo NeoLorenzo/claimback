@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClaimBack</title>
+<meta name="description" content="A team of Claude agents that turns a health-insurance denial into an appeal, then manages the case.">
+<style>
+:root {
+  --bg: #0b0e14; --panel: #121722; --panel-2: #171d2a; --line: #232b3a;
+  --text: #e6e9ef; --muted: #8b95a7; --dim: #5c6679;
+  --ok: #34d399; --warn: #fbbf24; --err: #f87171; --loop: #c084fc; --accent: #60a5fa;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+a { color: var(--accent); }
+button, select, input { font: inherit; color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; }
+button { cursor: pointer; }
+button:hover:not(:disabled) { border-color: #3a4558; }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: #1d4ed8; border-color: #2563eb; }
+button.go { background: #065f46; border-color: #059669; }
+button.link { background: none; border: none; color: var(--accent); padding: 0; }
+button.small { padding: 4px 9px; font-size: 13px; }
+input { width: 100%; }
+[hidden] { display: none !important; }
+.muted { color: var(--muted); } .dim { color: var(--dim); } .mono { font-family: var(--mono); }
+
+header { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between;
+  padding: 14px 24px; border-bottom: 1px solid var(--line); }
+.brand h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+.brand h1 span { color: var(--ok); }
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.who { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); margin-right: 5px; }
+.pulse.on { background: var(--ok); }
+.notice { margin: 12px 24px 0; padding: 10px 14px; border: 1px solid #4a3b12; background: #1d1808;
+  border-radius: 10px; color: #f5d98b; font-size: 13px; }
+
+main { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 16px; padding: 16px 24px 32px; }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 12px 16px; } header { padding: 12px 16px; }
+  .notice { margin: 12px 16px 0; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.card + .card { margin-top: 16px; }
+.card h2 { margin: 0 0 10px; font-size: 15px; }
+.card h3 { margin: 14px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.stack > * + * { margin-top: 10px; }
+.radio { display: flex; gap: 8px; align-items: flex-start; color: var(--muted); font-size: 13px; }
+.radio input { width: auto; margin-top: 3px; }
+.radio b { color: var(--text); font-weight: 600; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { padding: 8px 10px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+.list li:hover { background: var(--panel-2); }
+.list li.sel { border-color: #2c3850; background: var(--panel-2); }
+.list .t { font-size: 14px; } .list .s { font-size: 12px; color: var(--muted); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border: 1px solid var(--line); color: var(--muted); }
+.pill.running, .pill.action_required, .pill.queued { color: var(--accent); border-color: #24406b; }
+.pill.done, .pill.closed, .pill.strong { color: var(--ok); border-color: #1d5240; }
+.pill.failed, .pill.weak { color: var(--err); border-color: #5c2626; }
+.pill.awaiting_human, .pill.possible, .pill.stopped { color: var(--warn); border-color: #5a4614; }
+
+.empty { color: var(--muted); padding: 40px 10px; text-align: center; }
+.title-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
+.title-row h2 { margin: 0; font-size: 18px; }
+.stages { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+.stage { font-size: 12px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); }
+.stage.working { color: var(--text); border-color: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 30%, transparent); }
+.stage.done { color: var(--c); border-color: color-mix(in srgb, var(--c) 50%, var(--line)); }
+.stage.retry { color: var(--warn); border-color: var(--warn); }
+.stage.error { color: var(--err); border-color: var(--err); }
+
+.log { max-height: 52vh; overflow-y: auto; font-family: var(--mono); font-size: 12.5px; margin-top: 10px;
+  border-top: 1px solid var(--line); padding-top: 6px; }
+.row { display: grid; grid-template-columns: 64px 150px 16px 1fr; gap: 8px; padding: 2px 0; align-items: baseline; }
+.row .t { color: var(--dim); text-align: right; }
+.row .a { color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .k { text-align: center; color: var(--muted); }
+.row .m { overflow-wrap: anywhere; }
+.row.warn .m { color: var(--warn); } .row.error .m { color: var(--err); } .row.done .m { color: #c9f5e2; }
+@media (max-width: 700px) { .row { grid-template-columns: 1fr; gap: 0; padding: 4px 0; } .row .t, .row .k { display: none; } }
+
+.waiting { border: 1px solid #5a4614; background: #1d1808; border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
+.waiting b { color: var(--warn); }
+.task { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-top: 1px solid #3a2f10; }
+.task:first-of-type { border-top: none; }
+.draft { border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; }
+.draft .meta { padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); display: flex;
+  flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; align-items: center; }
+.draft pre { margin: 0; padding: 12px; max-height: 300px; overflow: auto; white-space: pre-wrap; font: 13px/1.5 var(--mono); }
+.mail { padding: 8px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.mail .sim { color: var(--dim); font-size: 12px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.toast { position: fixed; right: 16px; bottom: 16px; max-width: min(420px, calc(100vw - 32px)); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 14px; box-shadow: 0 6px 24px #0008; }
+.toast.err { border-color: #5c2626; color: #fecaca; }
+
+#auth { max-width: 420px; margin: 8vh auto; padding: 0 16px; }
+#auth .card { padding: 20px; }
+#auth h2 { font-size: 18px; }
+.or { text-align: center; color: var(--dim); font-size: 12px; margin: 14px 0; }
+
+dialog { width: min(960px, calc(100vw - 32px)); height: calc(100vh - 64px); padding: 0; border: 1px solid var(--line);
+  border-radius: 12px; background: var(--panel); color: var(--text); }
+dialog::backdrop { background: #000a; }
+dialog .bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+dialog iframe { width: 100%; height: calc(100% - 50px); border: 0; background: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>Claim<span>Back</span></h1>
+    <p>A team of Claude agents that drafts your insurance appeal, then manages the case with you.</p>
+  </div>
+  <div class="who" id="who" hidden>
+    <span><span class="pulse" id="workerDot"></span><span id="workerText">worker</span></span>
+    <span id="userText"></span>
+    <button class="small" id="purgeBtn">Delete my data</button>
+    <button class="small" id="signOutBtn">Sign out</button>
+  </div>
+</header>
+<div class="notice"><b>Demo with synthetic cases only.</b> Don't upload real medical or insurance documents:
+  this hosted demo isn't covered by a HIPAA Business Associate Agreement, and it accepts only documents marked
+  <span class="mono">SYNTHETIC TEST DOCUMENT</span>. Everything ClaimBack writes is a draft for a human to check;
+  it isn't legal or medical advice.</div>
+
+<section id="auth" hidden>
+  <div class="card stack">
+    <h2>Sign in to try ClaimBack</h2>
+    <button class="primary" id="guestBtn" style="width:100%">Continue as guest</button>
+    <p class="muted" style="font-size:13px;margin:6px 0 0">A guest account is private to this browser. You can delete its data any time.</p>
+    <div class="or">or with email</div>
+    <form id="emailForm" class="stack">
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+      <input type="password" id="password" placeholder="Password (8+ characters)" minlength="8" autocomplete="current-password" required>
+      <div class="toolbar"><button class="primary" type="submit">Sign in</button>
+        <button type="button" id="signUpBtn">Create account</button></div>
+    </form>
+    <p class="muted" id="authMsg" style="font-size:13px"></p>
+  </div>
+</section>
+
+<main id="app" hidden>
+  <aside>
+    <div class="card stack">
+      <h2>New case</h2>
+      <label class="radio"><input type="radio" name="src" value="sample" checked>
+        <span><b>Sample denial</b><br><select id="sample" style="margin-top:6px;width:100%"></select></span></label>
+      <label class="radio"><input type="radio" name="src" value="upload">
+        <span><b>Your synthetic documents</b> (.txt): a file named <span class="mono">*denial*</span>, plus the plan policy and
+          clinical notes if you have them. Each must contain <span class="mono">SYNTHETIC TEST DOCUMENT</span>.
+          <input type="file" id="files" accept=".txt,text/plain" multiple style="margin-top:6px"></span></label>
+      <h3>Agents</h3>
+      <label class="radio"><input type="radio" name="mode" value="mock" checked>
+        <span><b>Rehearsal</b>: canned agent outputs, about 1 minute, free.</span></label>
+      <label class="radio"><input type="radio" name="mode" value="live">
+        <span><b>Live Claude agents</b>: real research and drafting, 5–10 minutes. <span id="quota"></span></span></label>
+      <button class="go" id="startBtn" style="width:100%">Start the agent team</button>
+    </div>
+    <div class="card">
+      <h2>Your cases</h2>
+      <ul class="list" id="caseList"></ul>
+      <h3>Runs</h3>
+      <ul class="list" id="runList"></ul>
+    </div>
+  </aside>
+  <section id="view"><div class="card empty">Start a case on the left. You'll watch the agents work live, get the appeal packet,
+    and then manage the case: approve what gets sent, answer the insurer, and confirm the outcome.</div></section>
+</main>
+
+<dialog id="packetDlg"><div class="bar"><b>Appeal packet</b><div class="toolbar">
+  <button class="small" id="packetDownload">Download</button><button class="small" id="packetClose">Close</button></div></div>
+  <iframe id="packetFrame" sandbox="allow-modals" title="Appeal packet"></iframe></dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+"use strict";
+const C = window.CLAIMBACK;
+const sb = supabase.createClient(C.supabaseUrl, C.supabaseKey);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const AGENTS = {
+  orchestrator: ["Orchestrator", "#e5e7eb"], intake: ["Intake", "#22d3ee"], planner: ["Planner", "#e879f9"],
+  policy_analyst: ["Policy Analyst", "#60a5fa"], evidence_researcher: ["Evidence Researcher", "#4ade80"],
+  writer: ["Writer", "#facc15"], reviewer: ["Adversarial Reviewer", "#f87171"], fact_checker: ["Fact Checker", "#f0abfc"],
+  packager: ["Packager", "#86efac"], case_worker: ["Case worker", "#67e8f9"], connector: ["Mail", "#a5f3fc"],
+  insurer_sim: ["Simulated insurer", "#9ca3af"], correspondence: ["Correspondence", "#93c5fd"],
+};
+const PIPELINE = ["intake", "planner", "policy_analyst", "evidence_researcher", "writer", "reviewer", "fact_checker", "packager"];
+const MARK = {start: "▶", done: "✓", handoff: "→", retry: "↻", error: "✗", loop: "⟲", warn: "!", info: "·"};
+const SCENES = [["ack", "Acknowledges receipt"], ["evidence-request", "Asks for more evidence"],
+                ["overturned", "Overturns the denial"], ["upheld", "Upholds the denial"]];
+
+let session = null, runs = [], cases = [], current = null, channel = null, cfg = null;
+
+// ---- small helpers -------------------------------------------------------------
+function toast(msg, err = false) {
+  const t = document.createElement("div");
+  t.className = "toast" + (err ? " err" : "");
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), err ? 7000 : 4000);
+}
+async function api(path, body) {
+  const r = await fetch(C.apiUrl + path, {
+    method: body === undefined ? "GET" : "POST",
+    headers: {"Authorization": "Bearer " + session.access_token, "Content-Type": "application/json"},
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.detail || `request failed (${r.status})`);
+  return data;
+}
+const fmtTime = (iso) => new Date(iso).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"});
+const label = (s) => String(s || "").replaceAll("_", " ");
+
+// ---- auth -------------------------------------------------------------------------
+$("guestBtn").onclick = async () => {
+  const {error} = await sb.auth.signInAnonymously();
+  if (error) $("authMsg").textContent = error.message;
+};
+$("emailForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const {error} = await sb.auth.signInWithPassword({email: $("email").value, password: $("password").value});
+  if (error) $("authMsg").textContent = error.message;
+};
+$("signUpBtn").onclick = async () => {
+  const {data, error} = await sb.auth.signUp({email: $("email").value, password: $("password").value});
+  $("authMsg").textContent = error ? error.message : data.session ? "" : "Check your email to confirm the account.";
+};
+$("signOutBtn").onclick = () => sb.auth.signOut();
+$("purgeBtn").onclick = async () => {
+  if (!confirm("Delete every run, case, document and packet in this account? This can't be undone.")) return;
+  try { await api("/me/purge", {}); runs = []; cases = []; current = null; renderLists(); renderEmpty(); toast("Your data is being deleted."); }
+  catch (e) { toast(e.message, true); }
+};
+sb.auth.onAuthStateChange((_event, s) => {
+  const was = session?.user?.id;
+  session = s;
+  $("auth").hidden = !!s; $("app").hidden = !s; $("who").hidden = !s;
+  if (s) $("authMsg").textContent = "";
+  if (s && s.user.id !== was) boot();
+  if (!s && channel) { sb.removeChannel(channel); channel = null; }
+});
+
+// ---- data -------------------------------------------------------------------------
+async function boot() {
+  $("userText").textContent = session.user.is_anonymous ? "guest" : session.user.email;
+  const [r, c] = await Promise.all([
+    sb.from("runs").select("*").order("created_at", {ascending: false}),
+    sb.from("cases").select("*").order("created_at", {ascending: false}),
+  ]);
+  runs = r.data || []; cases = c.data || [];
+  renderLists();
+  subscribe();
+  loadConfig();
+  heartbeat();
+  route();
+}
+async function loadConfig() {
+  try {
+    cfg = await api("/config");
+    $("sample").innerHTML = Object.entries(cfg.samples).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join("");
+    $("quota").textContent = `${cfg.live_runs_left} of ${cfg.live_runs_per_user} left today.`;
+  } catch (e) {
+    $("sample").innerHTML = `<option value="cgm-denial">Continuous glucose monitor denial</option>`;
+    $("quota").textContent = "";
+    toast("The agent worker isn't reachable right now: " + e.message, true);
+  }
+}
+async function heartbeat() {
+  const {data} = await sb.from("worker_heartbeat").select("at").eq("id", "case-worker").maybeSingle();
+  const fresh = data && Date.now() - new Date(data.at) < 6 * 60 * 1000;
+  $("workerDot").className = "pulse" + (fresh ? " on" : "");
+  $("workerText").textContent = fresh ? "case worker online" : "case worker idle";
+  clearTimeout(heartbeat.t); heartbeat.t = setTimeout(heartbeat, 60000);
+}
+function subscribe() {
+  if (channel) sb.removeChannel(channel);
+  channel = sb.channel("claimback-" + session.user.id)
+    .on("postgres_changes", {event: "INSERT", schema: "public", table: "events"}, ({new: e}) => onEvent(e))
+    .on("postgres_changes", {event: "*", schema: "public", table: "runs"}, ({new: r}) => { upsert(runs, r); renderLists(); if (current?.type === "run" && current.id === r.id) renderRunHead(); })
+    .on("postgres_changes", {event: "*", schema: "public", table: "cases"}, ({new: c}) => { upsert(cases, c); renderLists(); if (current?.type === "case" && current.id === c.id) renderCase(); })
+    .on("postgres_changes", {event: "UPDATE", schema: "public", table: "jobs"}, ({new: j}) => onJob(j))
+    .subscribe();
+}
+function upsert(list, row) {
+  if (!row || !row.id) return;
+  const i = list.findIndex((x) => x.id === row.id);
+  if (i >= 0) list[i] = row; else list.unshift(row);
+}
+function onJob(j) {
+  if (j.status === "failed") toast(j.error || "That didn't work.", true);
+  if (j.status === "done" && j.kind === "start_run" && j.result?.case_id) toast("Appeal packet ready. Case opened.");
+  if (j.status === "done" && j.kind === "approve") toast("Sent to the insurer.");
+}
+function onEvent(e) {
+  if (!current) return;
+  if ((current.type === "run" && e.run_id === current.id) || (current.type === "case" && e.case_id === current.id)) {
+    current.events.push(e);
+    appendRow(e);
+    if (current.type === "run") paintStages();
+  }
+}
+
+// ---- lists ----------------------------------------------------------------------------
+function renderLists() {
+  $("caseList").innerHTML = cases.length ? cases.map((c) => {
+    const waiting = (c.data.tasks || []).filter((t) => t.status === "open" && t.owner === "user").length;
+    return `<li data-h="case/${esc(c.id)}" class="${current?.id === c.id ? "sel" : ""}"><div class="t">${esc(c.data.case_name)}
+      <span class="pill ${esc(c.status)}">${esc(label(c.status))}</span></div>
+      <div class="s">${esc(c.data.insurer_name)} · ${waiting ? `${waiting} waiting for you` : esc(label(c.stage))}</div></li>`;
+  }).join("") : `<li class="dim" style="cursor:default">A case opens when a run finishes.</li>`;
+  $("runList").innerHTML = runs.length ? runs.map((r) => `<li data-h="run/${esc(r.id)}" class="${current?.id === r.id ? "sel" : ""}">
+      <div class="t">${esc(r.case_name)} <span class="pill ${esc(r.status)}">${esc(r.status)}</span>
+      ${r.verdict ? `<span class="pill ${esc(r.verdict)}">${esc(r.verdict)}</span>` : ""}</div>
+      <div class="s">${esc(r.mode === "live" ? "live agents" : "rehearsal")} · ${new Date(r.created_at).toLocaleString()}</div></li>`).join("")
+    : `<li class="dim" style="cursor:default">No runs yet.</li>`;
+  document.querySelectorAll(".list li[data-h]").forEach((li) => li.onclick = () => { location.hash = li.dataset.h; });
+}
+
+// ---- routing -----------------------------------------------------------------------------
+window.addEventListener("hashchange", route);
+function route() {
+  if (!session) return;
+  const [type, id] = location.hash.slice(1).split("/");
+  if (type === "run" && id) openRun(decodeURIComponent(id));
+  else if (type === "case" && id) openCase(decodeURIComponent(id));
+  else renderEmpty();
+}
+function renderEmpty() {
+  current = null;
+  $("view").innerHTML = `<div class="card empty">Start a case on the left. You'll watch the agents work live, get the appeal packet,
+    and then manage the case: approve what gets sent, answer the insurer, and confirm the outcome.</div>`;
+}
+async function loadEvents(col, id) {
+  const {data} = await sb.from("events").select("*").eq(col, id).order("id").limit(2000);
+  return data || [];
+}
+
+// ---- run view ------------------------------------------------------------------------------
+async function openRun(id) {
+  current = {type: "run", id, events: []};
+  renderLists();
+  $("view").innerHTML = `<div class="card"><div class="title-row" id="runHead"></div>
+    <div class="stages" id="stages">${PIPELINE.map((a) => `<span class="stage" data-a="${a}" style="--c:${AGENTS[a][1]}">${AGENTS[a][0]}</span>`).join("")}</div>
+    <div class="log" id="log"></div></div>`;
+  renderRunHead();
+  const events = await loadEvents("run_id", id);
+  if (current?.id !== id) return;
+  const seen = new Set(current.events.map((e) => e.id));
+  current.events = [...events, ...current.events.filter((e) => !events.some((x) => x.id === e.id))];
+  $("log").innerHTML = "";
+  current.events.forEach(appendRow);
+  paintStages();
+  if (!events.length && !runs.find((r) => r.id === id)) $("log").innerHTML = `<div class="dim">Starting the worker… the first agent appears in a few seconds.</div>`;
+}
+function renderRunHead() {
+  const r = runs.find((x) => x.id === current.id) || {case_name: current.id, status: "starting"};
+  const c = cases.find((x) => x.run_id === current.id);
+  $("runHead").innerHTML = `<h2>${esc(r.case_name)} <span class="pill ${esc(r.status)}">${esc(r.status)}</span>
+      ${r.verdict ? `<span class="pill ${esc(r.verdict)}">verdict: ${esc(r.verdict)}</span>` : ""}</h2>
+    <div class="toolbar">${r.packet_path ? `<button class="primary" id="packetBtn">Open appeal packet</button>` : ""}
+      ${c ? `<button id="toCase">Go to the case →</button>` : ""}</div>`;
+  if (r.packet_path) $("packetBtn").onclick = () => openPacket(r.packet_path);
+  if (c) $("toCase").onclick = () => { location.hash = "case/" + c.id; };
+}
+function appendRow(e) {
+  const log = $("log") || $("caseLog");
+  if (!log) return;
+  if (log.firstElementChild?.classList.contains("dim")) log.innerHTML = "";
+  const [name, color] = AGENTS[e.agent] || [e.agent, "#9ca3af"];
+  const div = document.createElement("div");
+  div.className = "row " + e.kind;
+  div.style.setProperty("--c", color);
+  div.innerHTML = `<span class="t">${fmtTime(e.ts)}</span><span class="a">${esc(name)}</span><span class="k">${MARK[e.kind] || "·"}</span><span class="m"></span>`;
+  div.querySelector(".m").textContent = e.message;
+  const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+  log.appendChild(div);
+  if (atBottom) log.scrollTop = log.scrollHeight;
+}
+function paintStages() {
+  const state = {};
+  for (const e of current.events) {
+    if (!PIPELINE.includes(e.agent)) continue;
+    if (e.kind === "start") state[e.agent] = "working";
+    else if (e.kind === "done" || e.kind === "handoff") state[e.agent] = "done";
+    else if (e.kind === "retry") state[e.agent] = "retry";
+    else if (e.kind === "error") state[e.agent] = "error";
+  }
+  document.querySelectorAll("#stages .stage").forEach((s) => { s.className = "stage " + (state[s.dataset.a] || ""); });
+}
+async function openPacket(path) {
+  const {data, error} = await sb.storage.from("packets").download(path);
+  if (error) return toast(error.message, true);
+  const html = await data.text();
+  $("packetFrame").srcdoc = html;
+  $("packetDownload").onclick = () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([html], {type: "text/html"}));
+    a.download = "appeal_packet.html"; a.click();
+  };
+  $("packetDlg").showModal();
+}
+$("packetClose").onclick = () => $("packetDlg").close();
+
+// ---- case view -------------------------------------------------------------------------------
+async function openCase(id) {
+  current = {type: "case", id, events: []};
+  renderLists();
+  $("view").innerHTML = `<div class="card" id="caseCard"></div><div class="card"><h2>Case timeline</h2><div class="log" id="caseLog"></div></div>`;
+  renderCase();
+  const events = await loadEvents("case_id", id);
+  if (current?.id !== id) return;
+  current.events = [...events, ...current.events.filter((e) => !events.some((x) => x.id === e.id))];
+  $("caseLog").innerHTML = "";
+  current.events.forEach(appendRow);
+}
+function renderCase() {
+  const row = cases.find((c) => c.id === current.id);
+  const card = $("caseCard");
+  if (!card) return;
+  if (!row) { card.innerHTML = `<div class="empty">Case not found.</div>`; return; }
+  const c = row.data;
+  const run = runs.find((r) => r.id === row.run_id);
+  const userTasks = (c.tasks || []).filter((t) => t.status === "open" && t.owner === "user");
+  const drafts = (c.outbox || []).filter((o) => o.status === "awaiting_approval");
+  card.innerHTML = `
+    <div class="title-row"><h2>${esc(c.case_name)} <span class="pill ${esc(row.status)}">${esc(label(row.status))}</span></h2>
+      <div class="toolbar">${run?.packet_path ? `<button id="casePacket">Appeal packet</button>` : ""}
+        <button id="toRun">Agent run</button></div></div>
+    <p class="muted" style="margin:6px 0 0;font-size:13px">${esc(c.insurer_name)} · claim ${esc(c.claim_number)} · stage: ${esc(label(c.stage))}
+      · insurer replies go to <span class="mono">${esc(c.reply_address)}</span></p>
+    ${userTasks.length ? `<div class="waiting"><b>Waiting for you</b>${userTasks.map((t) => `<div class="task"><span>${esc(t.title)}
+      ${t.due ? `<span class="pill awaiting_human">due ${esc(t.due)}</span>` : ""}</span><span class="toolbar">${taskAction(t)}</span></div>`).join("")}</div>` : ""}
+    ${drafts.map((o) => `<div class="draft"><div class="meta"><span>Draft ${esc(o.id)} · to <b class="mono">${esc(o.to)}</b> · ${esc(o.subject)}
+      ${(o.attachments || []).length ? ` · attaches ${esc(o.attachments.join(", "))}` : ""}</span>
+      <button class="go small" data-approve="${esc(o.id)}">Approve &amp; send</button></div><pre></pre></div>`).join("")}
+    <h3>Correspondence</h3>
+    ${(c.correspondence || []).length ? c.correspondence.map((m) => `<div class="mail">${m.direction === "in" ? "⬇" : "⬆"}
+      <b>${esc(m.subject)}</b> <span class="dim">${esc(m.direction === "in" ? "from " + m.from : "to " + m.to)}</span>
+      ${m.simulated ? `<span class="sim">· simulated insurer</span>` : ""}
+      ${m.analysis?.summary ? `<div class="muted">${esc(m.analysis.message_type ? label(m.analysis.message_type) + ": " : "")}${esc(m.analysis.summary)}</div>` : ""}</div>`).join("")
+      : `<p class="dim">Nothing sent yet. Approve the first letter to send the appeal.</p>`}
+    ${row.status !== "closed" ? `<h3>Demo: play the insurer</h3><p class="muted" style="font-size:13px;margin:0 0 8px">Sends a clearly
+      labelled simulated insurer email to this case's reply address. The Correspondence agent reads it like real mail.</p>
+      <div class="toolbar">${SCENES.map(([k, v]) => `<button class="small" data-scene="${k}">${v}</button>`).join("")}</div>` : ""}
+    ${c.outcome ? `<h3>Outcome</h3><p>${esc(c.outcome.result)} (confirmed by ${esc(c.outcome.confirmed_by)})</p>` : ""}`;
+  card.querySelectorAll(".draft").forEach((d, i) => { d.querySelector("pre").textContent = drafts[i].body || "(draft text unavailable)"; });
+  card.querySelectorAll("[data-approve]").forEach((b) => b.onclick = () => caseAction(b, "approve", {outbox_id: b.dataset.approve},
+    `Send draft ${b.dataset.approve} to ${drafts.find((o) => o.id === b.dataset.approve).to}?`));
+  card.querySelectorAll("[data-scene]").forEach((b) => b.onclick = () => caseAction(b, "simulate", {scene: b.dataset.scene}));
+  card.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = () => caseAction(b, "confirm", {task_id: b.dataset.confirm},
+    "Confirm the insurer's decision and close the case?"));
+  card.querySelectorAll("[data-upload]").forEach((input) => input.onchange = () => uploadEvidence(input));
+  if ($("casePacket")) $("casePacket").onclick = () => openPacket(run.packet_path);
+  $("toRun").onclick = () => { location.hash = "run/" + row.run_id; };
+}
+function taskAction(t) {
+  if (t.kind === "upload_evidence") return `<label class="small"><input type="file" accept=".pdf,.txt,.md" data-upload="${esc(t.id)}" style="width:auto"></label>`;
+  if (t.kind === "confirm_outcome") return `<button class="go small" data-confirm="${esc(t.id)}">Confirm outcome</button>`;
+  if (t.kind === "approve_send") return `<span class="dim">see the draft below</span>`;
+  return "";
+}
+async function caseAction(btn, action, body, question) {
+  if (question && !confirm(question)) return;
+  btn.disabled = true;
+  try { await api(`/cases/${encodeURIComponent(current.id)}/${action}`, body); toast("Working on it…"); }
+  catch (e) { toast(e.message, true); }
+  finally { setTimeout(() => { btn.disabled = false; }, 4000); }
+}
+async function uploadEvidence(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const path = `${session.user.id}/${Date.now()}-${file.name.replace(/[^A-Za-z0-9._-]/g, "_")}`;
+  const {error} = await sb.storage.from("uploads").upload(path, file, {contentType: file.type || "text/plain"});
+  if (error) return toast(error.message, true);
+  try { await api(`/cases/${encodeURIComponent(current.id)}/upload`, {task_id: input.dataset.upload, path}); toast("Uploaded. The Writer and Fact Checker are drafting the reply."); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ---- start a run ------------------------------------------------------------------------------
+$("startBtn").onclick = async () => {
+  const btn = $("startBtn");
+  const src = document.querySelector("input[name=src]:checked").value;
+  const mode = document.querySelector("input[name=mode]:checked").value;
+  btn.disabled = true;
+  try {
+    const body = {mode};
+    if (src === "sample") body.sample = $("sample").value;
+    else {
+      const files = [...$("files").files];
+      if (!files.length) throw new Error("Choose your .txt documents first.");
+      for (const f of files) {
+        if (!(await f.text()).includes("SYNTHETIC TEST DOCUMENT"))
+          throw new Error(`${f.name} isn't marked SYNTHETIC TEST DOCUMENT. The hosted demo takes synthetic cases only.`);
+      }
+      body.uploads = [];
+      for (const f of files) {
+        const path = `${session.user.id}/${Date.now()}-${f.name.replace(/[^A-Za-z0-9._-]/g, "_")}`;
+        const {error} = await sb.storage.from("uploads").upload(path, f, {contentType: "text/plain"});
+        if (error) throw error;
+        body.uploads.push(path);
+      }
+    }
+    const {run_id} = await api("/runs", body);
+    location.hash = "run/" + run_id;
+    if (mode === "live") loadConfig();
+  } catch (e) { toast(e.message, true); }
+  finally { btn.disabled = false; }
+};
+
+sb.auth.getSession().then(({data}) => { if (!data.session) { $("auth").hidden = false; } });
+</script>
+</body>
+</html>
