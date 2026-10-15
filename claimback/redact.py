@@ -56,4 +56,6 @@ def leaks(text: str, mapping: dict[str, str]) -> list[str]:
 def rehydrate(text: str, display: dict[str, str]) -> str:
     for placeholder, value in display.items():
         text = text.replace(placeholder, value)
+        # Also catch tokens the writer embedded in its own brackets, e.g. "[PROVIDER_NAME_1 TO SIGN]"
+        text = re.sub(rf"\b{re.escape(placeholder.strip('[]'))}\b", value, text)
     return text
