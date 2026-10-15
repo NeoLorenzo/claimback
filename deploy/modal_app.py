@@ -121,6 +121,8 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
             volume.commit()
             _job(job_id, status="running", result={"note": "drafting the reply"})
             ops.advance([args["case_id"]])
+        elif kind == "simulate" and args.get("direct"):
+            ops.simulate(owner, args["case_id"], args["scene"], direct=True)
         elif kind == "simulate":
             ops.simulate(owner, args["case_id"], args["scene"])
             volume.commit()
@@ -152,8 +154,8 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
 # Every message it sends is marked as simulated; it goes through case_ops, so it's serialized
 # with everything else that touches the case.
 INSURER_SCRIPT = {
-    "initial_appeal": [(20, "ack"), (25, "evidence-request")],
-    "evidence_response": [(30, "overturned")],
+    "initial_appeal": [(2, "ack"), (3, "evidence-request")],
+    "evidence_response": [(3, "overturned")],
 }
 
 
@@ -162,7 +164,7 @@ def scripted_insurer(owner: str, case_id: str, letter_kind: str) -> None:
     import time
     for wait, scene in INSURER_SCRIPT.get(letter_kind, []):
         time.sleep(wait)
-        case_ops.remote("simulate", owner, {"case_id": case_id, "scene": scene}, None)
+        case_ops.remote("simulate", owner, {"case_id": case_id, "scene": scene, "direct": True}, None)
 
 
 @app.function(**WORKER, schedule=modal.Cron("*/2 * * * *"), timeout=15 * 60)

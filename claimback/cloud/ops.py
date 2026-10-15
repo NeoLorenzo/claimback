@@ -111,12 +111,27 @@ def upload(owner: str, case_id: str, task_id: str, filename: str, data: bytes) -
     return add_upload(case_id, task_id, filename, data)
 
 
-def simulate(owner: str, case_id: str, scene: str) -> None:
+def simulate(owner: str, case_id: str, scene: str, direct: bool = False) -> None:
     from ..insurer_sim import send_scene
     case = _own_case(owner, case_id)
     if case.status == "closed":
         raise Refused("this case is closed")
-    send_scene(case_id, scene)
+    send_scene(case_id, scene, direct=direct)
+    if direct:  # no mailbox to wait for: read it right away
+        read_now(case_id)
+
+
+def read_now(case_id: str) -> None:
+    """Have the agents read this case's new mail and draft any reply, without checking the mailbox."""
+    from ..correspondence import process_pending
+    from ..followup import process_followups
+    _set_mode(bridge.case_meta(case_id).get("mode", "mock"))
+    case = Case.load(case_id)
+    process_pending(case)
+    case = Case.load(case_id)
+    if case.pending_followups:
+        process_followups(case)
+    bridge.flush()
 
 
 def advance(case_ids: list[str] | None = None) -> int:

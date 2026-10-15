@@ -49,7 +49,10 @@ def _scene(name: str, case: Case, patient: str, ref: str) -> tuple[str, str]:
     return subject, BANNER + head + body + f"\n\nSincerely,\nAppeals and Grievances\n{case.insurer_name}\n"
 
 
-def send_scene(case_id: str, scene: str) -> str:
+def send_scene(case_id: str, scene: str, direct: bool = False) -> str:
+    """Send a scripted insurer email. direct=True skips the mailbox round trip and files the
+    same message straight into the case (for a fast demo); it is still redacted and read by
+    the Correspondence agent like any other mail."""
     case = Case.load(case_id)
     display = RunState.load(case.run_id).read_private("phi_map.json")["display"]
     patient = next((v for k, v in display.items() if k.startswith("[PATIENT_NAME")), "Member")
@@ -71,6 +74,13 @@ def send_scene(case_id: str, scene: str) -> str:
         subject=("Re: " if last_out else "") + subject, body=body, simulated=True,
         in_reply_to=last_out["message_id"] if last_out else None,
     )
+    if direct:
+        from .connectors.base import parse
+        from .worker import record_inbound
+        msg = mail.to_message()
+        record_inbound(case, parse(bytes(msg)))
+        emit("insurer_sim", "info", f"delivered simulated '{scene}' email straight to case {case.case_id}")
+        return msg["Message-ID"]
     message_id = connector.send(mail)
     emit("insurer_sim", "info", f"sent simulated '{scene}' email to {case.reply_address} via {connector.name}")
     return message_id
