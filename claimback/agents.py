@@ -61,7 +61,8 @@ def intake_facts(docs: dict[str, str], feedback=None) -> dict:
         "appeal_window_days is the number of days the member has to file an "
         "internal appeal, as stated in the denial letter or plan documents. In "
         "missing_information, list anything an appeal reviewer would want that "
-        "the documents don't contain. Extract only what the documents say."
+        "the documents don't contain. Redacted placeholders are present on "
+        "purpose and are not missing information. Extract only what the documents say."
     )
     out = llm.call("intake", system, docs_block(docs) + retry_note(feedback), CaseFacts, effort="low")
     return out.model_dump()
