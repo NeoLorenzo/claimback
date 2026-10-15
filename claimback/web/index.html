@@ -113,6 +113,98 @@ aside { display: flex; flex-direction: column; gap: 16px; }
 .guard { font-size: 13px; color: var(--muted); }
 .guard li { margin: 4px 0; }
 
+/* ---------- phases, detail panel, timings, expandable log ---------- */
+main#runView { grid-template-columns: minmax(0, 1fr) 400px; }
+@media (max-width: 1000px) { main#runView { grid-template-columns: 1fr; } }
+.phase-title { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px 0; border-top: 1px solid var(--line);
+  font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.phase-title .badge { text-transform: none; letter-spacing: 0; }
+.phase-title .pnote { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--dim); }
+svg#flow2 { display: block; width: 100%; height: auto; padding: 4px 8px 6px; }
+.node.human rect.box { stroke-dasharray: 5 4; }
+.node.waiting rect.box { stroke: var(--warn); fill: color-mix(in srgb, var(--warn) 12%, var(--panel-2)); }
+.node.waiting .ring { stroke: var(--warn); animation: pulse 1.4s ease-out infinite; }
+.node { cursor: pointer; }
+.node.sel rect.box { stroke: var(--text); stroke-width: 2.5; }
+.logbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); }
+.logbar h2 { margin: 0; font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.logbar .hint { color: var(--dim); font-size: 12.5px; margin-left: auto; }
+.logbar button { padding: 4px 10px; font-size: 13px; }
+#log { border-top: 1px solid var(--line); }
+#log.nocalls .usage { display: none; }
+.row.has-data { cursor: pointer; }
+.row.has-data .m::after { content: " ▸"; color: var(--dim); }
+.row.has-data.open .m::after { content: " ▾"; }
+.row.has-data:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.row.phase { margin: 8px 0 4px; padding: 8px 16px; background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.row.phase .m { color: var(--text); font-weight: 600; font-family: system-ui, sans-serif; }
+.row.sim .a::after { content: " SIM"; color: var(--loop); font-size: 10px; font-weight: 700; }
+.rowdata { margin: 2px 16px 8px 92px; padding: 8px 12px; border-left: 2px solid var(--c, var(--line)); background: var(--panel-2);
+  border-radius: 0 8px 8px 0; font: 12.5px/1.5 system-ui, sans-serif; color: #cfd5df; }
+@media (max-width: 700px) { .rowdata { margin-left: 16px; } }
+.kv { display: grid; grid-template-columns: minmax(90px, max-content) 1fr; gap: 3px 12px; margin: 0; }
+.kv > dt { color: var(--muted); font-size: 12px; padding-top: 1px; }
+.kv > dd { margin: 0; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.kv ul { margin: 0; padding-left: 16px; }
+.kv .obj { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; margin: 3px 0; background: color-mix(in srgb, var(--bg) 35%, transparent); }
+.kv a { color: var(--accent); }
+.v-true { color: var(--ok); } .v-false { color: var(--warn); } .v-none { color: var(--dim); }
+.st-met, .st-supported, .st-passed, .st-approve { color: var(--ok); font-weight: 600; }
+.st-not_met, .st-unsupported, .st-failed, .st-rejected { color: var(--err); font-weight: 600; }
+.st-unclear, .st-revise { color: var(--warn); font-weight: 600; }
+
+#detail { font-size: 13.5px; }
+#detail .dh { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+#detail .dh .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+#detail .dh b { font-size: 16px; }
+#detail .role { color: var(--muted); font-size: 12.5px; margin-bottom: 10px; }
+.mstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line);
+  border-radius: 8px; overflow: hidden; margin-bottom: 10px; }
+.mstats div { background: var(--panel-2); padding: 6px 8px; }
+.mstats .v { font-weight: 650; font-variant-numeric: tabular-nums; }
+.mstats .l { color: var(--muted); font-size: 11px; }
+#detail .models { color: var(--muted); font-size: 12px; margin: -4px 0 10px; font-family: var(--mono); }
+#detail details { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; background: var(--panel-2); }
+#detail details > summary { padding: 7px 10px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; list-style: none; }
+#detail details > summary::-webkit-details-marker { display: none; }
+#detail details > summary .sn { font-family: var(--mono); font-weight: 600; }
+#detail details > summary .ss { color: var(--muted); font-size: 12px; margin-left: auto; white-space: nowrap; }
+#detail details .body { padding: 2px 10px 10px; }
+#detail h4 { margin: 8px 0 4px; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+#detail .recv { color: #cfd5df; margin-bottom: 4px; }
+#detail .retryn { color: var(--warn); font-size: 12.5px; margin: 4px 0; }
+#detail .handoffs { font-size: 12.5px; color: #93c5fd; }
+#detail .kv { font-size: 12.5px; }
+
+.timings { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; }
+.timings .tr { display: grid; grid-template-columns: 128px 1fr 74px; gap: 8px; align-items: center; cursor: pointer; }
+.timings .tr:hover .tn { color: var(--text); }
+.timings .tn { font-family: var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timings .bar { height: 10px; border-radius: 3px; background: var(--panel-2); overflow: hidden; }
+.timings .bar div { height: 100%; background: var(--c); opacity: .8; min-width: 2px; }
+.timings .bar div.retried { background: repeating-linear-gradient(90deg, var(--c) 0 6px, var(--warn) 6px 9px); }
+.timings .tv { text-align: right; font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+.timings .tv small { color: var(--dim); }
+.timings .sep { margin: 6px 0 2px; color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+
+.cbox { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.cbox .chead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cbox .cid { font-family: var(--mono); color: var(--muted); font-size: 12px; }
+.cmsg { border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; background: var(--panel-2); }
+.cmsg.in { border-left: 3px solid #22d3ee; } .cmsg.out { border-left: 3px solid var(--ok); }
+.cmsg .mh { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
+.cmsg .mh b { color: var(--text); font-weight: 600; }
+.cmsg .s { margin-top: 3px; }
+.cmsg .an { margin-top: 3px; color: #cfd5df; font-size: 12.5px; }
+.cmsg .an .by { color: #f472b6; font-weight: 600; font-size: 11.5px; margin-right: 4px; }
+.ctasks { display: flex; flex-direction: column; gap: 2px; }
+.ctasks .t { display: grid; grid-template-columns: 26px 1fr auto; gap: 6px; font-size: 12.5px; }
+.ctasks .t .id { font-family: var(--mono); color: var(--dim); }
+.ctasks .t.done .ti { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--dim); }
+.ctasks .t .who { color: var(--muted); font-size: 11.5px; }
+.cbox h4 { margin: 4px 0 0; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
 /* ---------- view tabs ---------- */
 .brand-row { display: flex; align-items: center; gap: 22px; }
 .tabs { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
@@ -277,7 +369,7 @@ dialog#sendDlg::backdrop { background: rgba(3, 6, 12, .7); }
       </nav>
     </div>
     <p>Insurance denial letter in, ready-to-send appeal packet out, built by a team of Claude agents</p>
-    <p id="staticNote" class="static-note" hidden>Recorded run with synthetic patient data, replayed from its real agent log.
+    <p id="staticNote" class="static-note" hidden>Recorded run and case (synthetic patient, simulated insurer), replayed from the real agent logs. Click an agent or a log row for details.
       <a href="https://github.com/NeoLorenzo/claimback">Source on GitHub</a></p>
   </div>
   <div class="controls" id="caseControls" hidden>
@@ -304,17 +396,27 @@ dialog#sendDlg::backdrop { background: rgba(3, 6, 12, .7); }
 <main id="runView">
   <section class="card">
     <div id="now"><span class="dot"></span><span class="text">Pick a run, or start one</span><span class="mode" id="modeTxt"></span></div>
+    <div class="phase-title">Phase 1 · Agent run <span class="pnote">denial letter in, appeal packet out · click an agent for its inputs, outputs, timing and cost</span></div>
     <svg id="flow" viewBox="0 0 1300 350" role="img" aria-label="Agent workflow"></svg>
+    <div class="phase-title">Phase 2 · Case with the insurer <span class="badge sim">insurer messages are simulated</span>
+      <span class="pnote" id="phase2Note">the long-running case after the run: email in and out, human approvals</span></div>
+    <svg id="flow2" viewBox="0 0 1300 330" role="img" aria-label="Case workflow"></svg>
+    <div class="logbar">
+      <h2>Agent log</h2>
+      <label class="check"><input type="checkbox" id="showCalls" checked> model calls</label>
+      <button id="expandAll">Expand all</button>
+      <span class="hint">click a row ▸ for its structured data</span>
+    </div>
     <div id="log" aria-live="polite"></div>
   </section>
 
   <aside>
     <div class="stats">
       <div class="stat wide verdict" id="verdictTile"><div class="v" id="sVerdict">–</div><div class="l" id="sVerdictWhy">appeal merit (planner · policy analyst · reviewer)</div></div>
-      <div class="stat"><div class="v" id="sElapsed">0:00</div><div class="l">run time</div></div>
+      <div class="stat"><div class="v" id="sElapsed">0:00</div><div class="l">active time (idle gaps skipped)</div></div>
       <div class="stat"><div class="v" id="sCalls">0</div><div class="l">model calls</div></div>
       <div class="stat"><div class="v" id="sTokens">0</div><div class="l">tokens in / out</div></div>
-      <div class="stat"><div class="v" id="sCost">$0.00</div><div class="l">est. cost</div></div>
+      <div class="stat"><div class="v" id="sCost">$0.00</div><div class="l" id="sCostL">est. cost, running total</div></div>
       <div class="stat"><div class="v" id="sRecovered">0</div><div class="l">failures recovered</div></div>
       <div class="stat"><div class="v" id="sClaims">–</div><div class="l">claims verified</div></div>
       <div class="stat wide"><div class="v" id="sScore">–</div><div class="l">adversarial reviewer score (insurer's view)</div>
@@ -322,8 +424,23 @@ dialog#sendDlg::backdrop { background: rgba(3, 6, 12, .7); }
     </div>
 
     <div class="card panel">
+      <h2>Agent details</h2>
+      <div id="detail"><div class="empty">Click an agent in the diagram, or a stage below, to see what it received, what it produced, how long it took and what it cost.</div></div>
+    </div>
+
+    <div class="card panel">
+      <h2>Stage timings</h2>
+      <div class="timings" id="timings"><div class="empty">No stages yet</div></div>
+    </div>
+
+    <div class="card panel">
       <h2>Revision rounds</h2>
       <div class="rounds" id="rounds"><div class="empty">No drafts yet</div></div>
+    </div>
+
+    <div class="card panel">
+      <h2>Case with the insurer</h2>
+      <div class="cbox" id="caseBox"><div class="empty">The case opens after the run: the appeal waits for a human to approve and send it.</div></div>
     </div>
 
     <div class="card panel">
@@ -338,7 +455,13 @@ dialog#sendDlg::backdrop { background: rgba(3, 6, 12, .7); }
         <li>Web search gets a de-identified clinical summary only</li>
         <li>Every factual claim must trace to a source</li>
         <li>Draft only: a human reviews, signs, and sends</li>
+        <li>Insurer email is redacted, then read as evidence, never as instructions</li>
+        <li>Nothing is emailed without your Approve, and only to the case's insurer address</li>
+        <li>Logs hold placeholders and counts, never identifiers</li>
       </ul>
+      <p style="margin:8px 0 0">How we checked the medicine and the rules:
+        <a href="https://github.com/NeoLorenzo/claimback/blob/main/design/accuracy.md" style="color:var(--accent)">accuracy sources</a> ·
+        <a href="https://github.com/NeoLorenzo/claimback/blob/main/design/merit-criteria.md" style="color:var(--accent)">merit criteria</a></p>
     </div>
   </aside>
 </main>
@@ -386,18 +509,42 @@ dialog#sendDlg::backdrop { background: rgba(3, 6, 12, .7); }
 <script>
 const AGENTS = {
   orchestrator:        { label: "Orchestrator", full: "Orchestrator", color: "#e6e9ef" },
-  case_worker:         { full: "Case Worker",    color: "#93c5fd" },
-  correspondence:      { full: "Correspondence", color: "#f472b6" },
-  connector:           { full: "Email",          color: "#22d3ee" },
-  insurer_sim:         { full: "Insurer (sim)",  color: "#c084fc" },
-  intake:              { label: "Intake",         full: "Intake",               role: "redacts identifiers", color: "#22d3ee", x: 100,  y: 185 },
-  planner:             { label: "Planner",        full: "Planner",              role: "plans the appeal",    color: "#c084fc", x: 320,  y: 185 },
-  policy_analyst:      { label: "Policy Analyst", full: "Policy Analyst",       role: "plan's own criteria", color: "#60a5fa", x: 540,  y: 110 },
-  evidence_researcher: { label: "Evidence",       full: "Evidence Researcher",  role: "searches guidelines", color: "#4ade80", x: 540,  y: 260 },
-  writer:              { label: "Writer",         full: "Writer",               role: "drafts the letter",   color: "#fbbf24", x: 760,  y: 185 },
-  reviewer:            { label: "Reviewer",       full: "Adversarial Reviewer", role: "plays the insurer",   color: "#f87171", x: 980,  y: 110 },
-  fact_checker:        { label: "Fact Checker",   full: "Fact Checker",         role: "verifies each claim", color: "#f472b6", x: 980,  y: 260 },
-  packager:            { label: "Packager",       full: "Packager",             role: "builds the packet",   color: "#34d399", x: 1200, y: 185 },
+  intake:              { label: "Intake",         full: "Intake",               role: "redacts identifiers", color: "#22d3ee", x: 100,  y: 185, p: 1 },
+  planner:             { label: "Planner",        full: "Planner",              role: "plans the appeal",    color: "#c084fc", x: 320,  y: 185, p: 1 },
+  policy_analyst:      { label: "Policy Analyst", full: "Policy Analyst",       role: "plan's own criteria", color: "#60a5fa", x: 540,  y: 110, p: 1 },
+  evidence_researcher: { label: "Evidence",       full: "Evidence Researcher",  role: "searches guidelines", color: "#4ade80", x: 540,  y: 260, p: 1 },
+  writer:              { label: "Writer",         full: "Writer",               role: "drafts the letter",   color: "#fbbf24", x: 760,  y: 185, p: 1 },
+  reviewer:            { label: "Reviewer",       full: "Adversarial Reviewer", role: "plays the insurer",   color: "#f87171", x: 980,  y: 110, p: 1 },
+  fact_checker:        { label: "Fact Checker",   full: "Fact Checker",         role: "verifies each claim", color: "#f472b6", x: 980,  y: 260, p: 1 },
+  packager:            { label: "Packager",       full: "Packager",             role: "builds the packet",   color: "#34d399", x: 1200, y: 185, p: 1 },
+  // phase 2: the case after the run
+  insurer_sim:         { label: "Insurer",        full: "Insurer (simulated)",  role: "SIMULATED script",    color: "#c084fc", x: 110,  y: 85,  p: 2 },
+  connector:           { label: "Mailbox",        full: "Email",                role: "email in and out",    color: "#22d3ee", x: 330,  y: 85,  p: 2 },
+  c_intake:            { label: "Intake",         full: "Intake",               role: "redacts each email",  color: "#22d3ee", x: 550,  y: 85,  p: 2 },
+  correspondence:      { label: "Correspondence", full: "Correspondence",       role: "classifies email",    color: "#e879f9", x: 770,  y: 85,  p: 2 },
+  case_worker:         { label: "Case Worker",    full: "Case Worker",          role: "tasks, status, outbox", color: "#93c5fd", x: 990, y: 85,  p: 2 },
+  human:               { label: "You",            full: "You (human)",          role: "approve, upload",     color: "#e6e9ef", x: 1200, y: 85,  p: 2 },
+  c_writer:            { label: "Writer",         full: "Writer",               role: "drafts the reply",    color: "#fbbf24", x: 770,  y: 240, p: 2 },
+  c_fact_checker:      { label: "Fact Checker",   full: "Fact Checker",         role: "verifies the reply",  color: "#f472b6", x: 990,  y: 240, p: 2 },
+};
+const ROLE_LONG = {
+  orchestrator: "Plans the run, hands typed artifacts between agents, retries failures, runs independent agents in parallel and checkpoints every stage so a crashed run resumes.",
+  intake: "Finds every personal identifier in the raw documents, swaps each for a placeholder such as [PATIENT_NAME_1] and leak-checks the result, then extracts the denial's facts. The only agent that ever sees identifiers; the map stays on local disk.",
+  planner: "Classifies the denial, rates the appeal's merit honestly, sets the strategy and writes questions for the Policy Analyst and the Evidence Researcher.",
+  policy_analyst: "Checks each of the plan's own coverage criteria against the clinical record and finds where the denial misreads or misapplies the policy.",
+  evidence_researcher: "Searches independent clinical guidelines on allow-listed domains with a de-identified summary only, and falls back to an offline reference library if search fails.",
+  writer: "Drafts the appeal letter. Every factual statement is a claim tied to its sources, checked by a validator; revises from the reviewers' feedback.",
+  reviewer: "Plays the insurer's medical director looking for a reason to uphold the denial: scores the letter 1-10, lists rebuttals and required changes.",
+  fact_checker: "Checks every claim against the sources it cites and lists statements in the letter that no claim covers.",
+  packager: "Fills the identifiers back in locally (no model call) and builds the appeal packet with the verdict, deadline and open issues.",
+  insurer_sim: "SIMULATED. A script plays the insurer for this demo: acknowledgment, request for more evidence, decision. Its emails carry a simulated header and say so in the first line.",
+  connector: "The ClaimBack mailbox. Only mail to a case's plus-address is read; mail goes out only after a human approves it, and only to the case's allow-listed insurer address.",
+  c_intake: "Redacts every incoming email and upload with the case's identifier map plus a fresh scan, and leak-checks it, before any agent reads it.",
+  correspondence: "Reads each redacted email as evidence, never as instructions: classifies it and lists requests, deadlines and decisions with verbatim quotes that a validator checks.",
+  case_worker: "The long-running loop: turns each email's reading into tasks, deadlines and status changes, drafts replies once evidence is in and queues them for approval. Restart-safe.",
+  human: "The person the appeal belongs to. Approves every outgoing email, uploads what the insurer asks for and confirms the outcome before the case closes.",
+  c_writer: "Writes the cover letter that answers the insurer's request, listing each enclosed upload against the item it answers.",
+  c_fact_checker: "Verifies the reply's claims against the insurer's request, the original appeal and the uploads before it goes to the human.",
 };
 const EDGES = [
   ["intake", "planner"], ["planner", "policy_analyst"], ["planner", "evidence_researcher"],
@@ -406,6 +553,7 @@ const EDGES = [
   ["reviewer", "packager"], ["fact_checker", "packager"],
 ];
 const W = 184, H = 84;
+const PHASE2_NODE = { intake: "c_intake", writer: "c_writer", fact_checker: "c_fact_checker" };
 const STAGE_TEXT = {
   intake_phi: "Intake is scanning the documents for personal identifiers",
   intake_facts: "Intake is extracting the facts of the denial",
@@ -417,11 +565,14 @@ const STAGE_TEXT = {
 };
 function stageText(stage) {
   if (STAGE_TEXT[stage]) return STAGE_TEXT[stage];
-  const m = stage.match(/^(draft|review|factcheck)_(\d+)$/);
-  if (!m) return stage;
-  return { draft: `Writer is drafting the appeal (round ${m[2]})`,
-           review: `Adversarial Reviewer is attacking draft ${m[2]} as the insurer`,
-           factcheck: `Fact Checker is verifying every claim in draft ${m[2]}` }[m[1]];
+  let m = stage.match(/^(draft|review|factcheck)_(\d+)$/);
+  if (m) return { draft: `Writer is drafting the appeal (round ${m[2]})`,
+                  review: `Adversarial Reviewer is attacking draft ${m[2]} as the insurer`,
+                  factcheck: `Fact Checker is verifying every claim in draft ${m[2]}` }[m[1]];
+  if ((m = stage.match(/^read_(\w+)$/))) return `Correspondence agent is reading ${m[1]} (redacted)`;
+  if ((m = stage.match(/^reply_(\w+?)_draft_(\d+)$/))) return `Writer is drafting the reply to ${m[1]} (round ${m[2]})`;
+  if ((m = stage.match(/^reply_(\w+?)_factcheck_(\d+)$/))) return `Fact Checker is verifying reply draft ${m[2]}`;
+  return stage;
 }
 const $ = (id) => document.getElementById(id);
 // Static mode (GitHub Pages): replay recorded runs only; live runs need the local server
@@ -433,59 +584,87 @@ const API = {
 };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-// ---------- diagram ----------
+// ---------- diagrams ----------
+function nodeSvg(id, a) {
+  return `<g class="node idle${id === "human" ? " human" : ""}" id="n-${id}" data-node="${id}" style="--c:${a.color}">
+    <title>${esc(a.full)}: click for details</title>
+    <rect class="ring" x="${a.x - W / 2}" y="${a.y - H / 2}" width="${W}" height="${H}" rx="10"/>
+    <rect class="box" x="${a.x - W / 2}" y="${a.y - H / 2}" width="${W}" height="${H}" rx="10"/>
+    <circle cx="${a.x - W / 2 + 16}" cy="${a.y - 21}" r="6" fill="${a.color}"/>
+    <text class="title" x="${a.x - W / 2 + 30}" y="${a.y - 15}">${a.label}</text>
+    <text class="role" x="${a.x - W / 2 + 14}" y="${a.y + 7}">${a.role}</text>
+    <text class="sub" id="s-${id}" x="${a.x - W / 2 + 14}" y="${a.y + 29}">waiting</text></g>`;
+}
+const ARROW = `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+  <path d="M0,1 L9,5 L0,9 z" fill="#4a5568"/></marker></defs>`;
 function buildDiagram() {
-  const svg = $("flow");
-  const NS = "http://www.w3.org/2000/svg";
-  let html = `<g class="orch"><rect x="8" y="8" width="1284" height="38" rx="8"/>
+  let html = ARROW + `<g class="orch"><rect x="8" y="8" width="1284" height="38" rx="8"/>
     <text x="22" y="32"><tspan class="strong">Orchestrator</tspan> plans the run · hands off typed artifacts · retries failures · checkpoints every stage</text>
     <text id="orchStatus" x="1278" y="32" text-anchor="end"></text></g>`;
   const port = (a, side) => ({ x: AGENTS[a].x + (side === "r" ? W / 2 : -W / 2), y: AGENTS[a].y });
   for (const [a, b] of EDGES) {
     const p = port(a, "r"), q = port(b, "l"), mx = (p.x + q.x) / 2;
-    html += `<path id="e-${a}-${b}" class="edge" style="--c:${AGENTS[a].color}" d="M${p.x},${p.y} C${mx},${p.y} ${mx},${q.y} ${q.x},${q.y}"/>`;
+    html += `<path id="e-${a}-${b}" class="edge" marker-end="url(#arr)" style="--c:${AGENTS[a].color}" d="M${p.x},${p.y} C${mx},${p.y} ${mx},${q.y} ${q.x},${q.y}"/>`;
   }
-  // feedback loops back to the writer
-  for (const a of ["reviewer", "fact_checker"]) {
+  for (const a of ["reviewer", "fact_checker"]) {  // feedback loops back to the writer
     const top = a === "reviewer";
     const s = { x: AGENTS[a].x - 30, y: AGENTS[a].y + (top ? -H / 2 : H / 2) };
     const t = { x: AGENTS.writer.x + 30, y: AGENTS.writer.y + (top ? -H / 2 : H / 2) };
     const cy = top ? 50 : 345;
-    html += `<path id="loop-${a}" class="edge loop" d="M${s.x},${s.y} C${s.x},${cy} ${t.x},${cy} ${t.x},${t.y}"/>`;
+    html += `<path id="loop-${a}" class="edge loop" marker-end="url(#arr)" d="M${s.x},${s.y} C${s.x},${cy} ${t.x},${cy} ${t.x},${t.y}"/>`;
   }
-  for (const [id, a] of Object.entries(AGENTS)) {
-    if (a.x === undefined) continue;
-    html += `<g class="node idle" id="n-${id}" style="--c:${a.color}">
-      <rect class="ring" x="${a.x - W / 2}" y="${a.y - H / 2}" width="${W}" height="${H}" rx="10"/>
-      <rect class="box" x="${a.x - W / 2}" y="${a.y - H / 2}" width="${W}" height="${H}" rx="10"/>
-      <circle cx="${a.x - W / 2 + 16}" cy="${a.y - 21}" r="6" fill="${a.color}"/>
-      <text class="title" x="${a.x - W / 2 + 30}" y="${a.y - 15}">${a.label}</text>
-      <text class="role" x="${a.x - W / 2 + 14}" y="${a.y + 7}">${a.role}</text>
-      <text class="sub" id="s-${id}" x="${a.x - W / 2 + 14}" y="${a.y + 29}">waiting</text></g>`;
-  }
-  svg.innerHTML = html;
+  for (const [id, a] of Object.entries(AGENTS)) if (a.p === 1) html += nodeSvg(id, a);
+  $("flow").innerHTML = html;
+
+  // phase 2
+  const A = AGENTS, r = (n) => A[n].x + W / 2, l = (n) => A[n].x - W / 2, t = (n) => A[n].y - H / 2, b = (n) => A[n].y + H / 2;
+  const line = (id, from, to, d, label) => `<path id="e2-${from}-${to}" class="edge" marker-end="url(#arr)" style="--c:${A[from].color}" d="${d}"/>`
+    + (label ? `<text x="${label[0]}" y="${label[1]}" text-anchor="middle" fill="var(--dim)" font-size="13">${label[2]}</text>` : "");
+  let h2 = ARROW;
+  h2 += line(0, "insurer_sim", "connector", `M${r("insurer_sim")},${A.insurer_sim.y - 14} L${l("connector")},${A.connector.y - 14}`);
+  h2 += line(0, "connector", "insurer_sim", `M${l("connector")},${A.connector.y + 14} L${r("insurer_sim")},${A.insurer_sim.y + 14}`);
+  h2 += line(0, "connector", "c_intake", `M${r("connector")},${A.connector.y} L${l("c_intake")},${A.c_intake.y}`);
+  h2 += line(0, "c_intake", "correspondence", `M${r("c_intake")},${A.c_intake.y} L${l("correspondence")},${A.correspondence.y}`);
+  h2 += line(0, "correspondence", "case_worker", `M${r("correspondence")},${A.correspondence.y} L${l("case_worker")},${A.case_worker.y}`);
+  h2 += line(0, "case_worker", "human", `M${r("case_worker")},${A.case_worker.y - 14} L${l("human")},${A.human.y - 14}`);
+  h2 += line(0, "human", "case_worker", `M${l("human")},${A.human.y + 14} L${r("case_worker")},${A.case_worker.y + 14}`);
+  h2 += line(0, "case_worker", "c_writer", `M${A.case_worker.x - 50},${b("case_worker")} C${A.case_worker.x - 50},170 ${A.c_writer.x + 40},170 ${A.c_writer.x + 40},${t("c_writer")}`,
+             [A.c_writer.x - 50, 180, "evidence in → draft reply"]);
+  h2 += line(0, "c_writer", "c_fact_checker", `M${r("c_writer")},${A.c_writer.y} L${l("c_fact_checker")},${A.c_fact_checker.y}`);
+  h2 += line(0, "c_fact_checker", "case_worker", `M${A.case_worker.x + 30},${t("c_fact_checker")} L${A.case_worker.x + 30},${b("case_worker")}`);
+  h2 += `<path id="loop2" class="edge loop" marker-end="url(#arr)" d="M${A.c_fact_checker.x - 30},${b("c_fact_checker")} C${A.c_fact_checker.x - 30},320 ${A.c_writer.x + 30},320 ${A.c_writer.x + 30},${b("c_writer")}"/>`;
+  h2 += line(0, "human", "connector", `M${A.human.x},${b("human")} C${A.human.x},300 ${A.connector.x},300 ${A.connector.x},${b("connector")}`,
+             [A.connector.x + 120, 252, "approve & send (allow-listed address only)"]);
+  for (const [id, a] of Object.entries(AGENTS)) if (a.p === 2) h2 += nodeSvg(id, a);
+  $("flow2").innerHTML = h2;
+  for (const g of document.querySelectorAll("[data-node]")) g.onclick = () => select(g.dataset.node);
 }
 
 // ---------- run model ----------
 let S;
 function resetState() {
-  S = { t0: null, tLast: null, virtual: 0, calls: 0, tin: 0, tout: 0, retries: 0,
-        rounds: {}, packet: false, status: null, lastTs: null, working: new Map() };
+  S = { virtual: 0, lastTs: null, calls: 0, tin: 0, tout: 0, cost: 0, retries: 0, rounds: {}, packet: false,
+        working: new Map(), merit: null, nodes: {}, stages: new Map(), phase: 1, sel: S && S.sel, caze: null };
   buildDiagram();
   $("log").innerHTML = "";
   $("rounds").innerHTML = `<div class="empty">No drafts yet</div>`;
+  $("timings").innerHTML = `<div class="empty">No stages yet</div>`;
+  $("caseBox").innerHTML = `<div class="empty">The case opens after the run: the appeal waits for a human to approve and send it.</div>`;
+  $("phase2Note").textContent = "the long-running case after the run: email in and out, human approvals";
   for (const id of ["sCalls", "sRecovered"]) $(id).textContent = "0";
   $("sTokens").textContent = "0"; $("sCost").textContent = "$0.00"; $("sElapsed").textContent = "0:00";
   $("sClaims").textContent = "–"; $("sScore").textContent = "–"; $("scoreBar").style.width = "0";
   $("sVerdict").textContent = "–"; $("verdictTile").className = "stat wide verdict";
   $("sVerdictWhy").textContent = "appeal merit (planner · policy analyst · reviewer)";
+  $("sCostL").textContent = "est. cost, running total";
   setPacket(false); setNow("Ready", false);
+  if (S.sel) select(S.sel); else $("detail").innerHTML = `<div class="empty">Click an agent in the diagram, or a stage below, to see what it received, what it produced, how long it took and what it cost.</div>`;
 }
-function setNode(agent, cls, sub) {
-  const n = $("n-" + agent);
+function setNode(node, cls, sub) {
+  const n = $("n-" + node);
   if (!n) return;
-  n.setAttribute("class", "node " + cls);
-  if (sub !== undefined) $("s-" + agent).textContent = sub;
+  n.setAttribute("class", `node ${cls}${node === "human" ? " human" : ""}${S.sel === node ? " sel" : ""}`);
+  if (sub !== undefined) $("s-" + node).textContent = sub.length > 24 ? sub.slice(0, 23) + "…" : sub;
 }
 function flash(id, ms = 1600) {
   const e = $(id); if (!e) return;
@@ -507,41 +686,104 @@ function setPacket(ready) {
 }
 const fmtTime = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 const fmtNum = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n);
+const fmtSecs = (s) => s == null ? "…" : s >= 60 ? `${Math.floor(s / 60)}m ${Math.round(s % 60)}s` : `${s.toFixed(1)}s`;
+const fmtUsd = (c) => "$" + (c >= 1 ? c.toFixed(2) : c.toFixed(3));
+const isCase = (e) => !!(e.data && e.data.case);
+const nodeOf = (e) => isCase(e) ? (PHASE2_NODE[e.agent] || e.agent) : e.agent;
+const mapTarget = (t, phase2) => phase2 ? (PHASE2_NODE[t] || t) : t;
+
+function nodeStats(id) {
+  return S.nodes[id] ||= { calls: 0, tin: 0, tout: 0, cost: 0, secs: 0, models: new Set(), efforts: new Set(),
+                           stages: [], sent: [], recent: [] };
+}
+function stageRec(name, node, ts) {
+  let r = S.stages.get(name);
+  if (!r) {
+    r = { name, node, phase: S.phase, attempts: 0, inputs: null, received: "", output: null, summary: "", secs: null,
+          retries: [], calls: 0, cost: 0, tin: 0, tout: 0, status: "running", startTs: ts, feedback: null };
+    S.stages.set(name, r);
+    nodeStats(node).stages.push(r);
+  }
+  return r;
+}
 
 function apply(e, opts = {}) {
   const ts = Date.parse(e.ts);
   if (S.lastTs !== null) { const gap = Math.max(ts - S.lastTs, 0) / 1000; if (gap < 300) S.virtual += gap; } // skip idle gaps, e.g. crash -> resume
   S.lastTs = ts;
   $("sElapsed").textContent = fmtTime(S.virtual);
-  const a = e.agent, d = e.data || {}, m = e.message;
-
-  // diagram + headline
-  const stage = (m.match(/^([a-z_]+\d*) \(attempt (\d+)\/(\d+)\)/) || []);
-  if (e.kind === "start" && stage[1]) {
-    setNode(a, "working", `${stage[1]} · try ${stage[2]}/${stage[3]}`);
-    S.working.set(a, stage[1]);
-    refreshNow(opts.live);
-  } else if (e.kind === "done" && a !== "orchestrator") {
-    setNode(a, "done", "✓ " + (m.split(" ")[0] || "done"));
-    if (/ complete$/.test(m)) { S.working.delete(a); refreshNow(opts.live); }
-  } else if (e.kind === "retry") {
-    S.retries++; $("sRecovered").textContent = S.retries;
-    setNode(a, "retry", "↻ retrying");
-    setNow(`${AGENTS[a]?.full || a} hit a failure and is retrying`, opts.live);
-  } else if (e.kind === "error") {
-    S.working.delete(a);
-    setNode(a, "error", "✗ failed");
-    setNow(`${AGENTS[a]?.full || a}: ${m}`, false);
-  } else if (e.kind === "handoff") {
-    const targets = d.to || Object.keys(AGENTS).filter((k) => m.includes(k));
-    for (const t of targets) flash(`e-${a}-${t}`);
-    if (!S.working.size) setNow(`${AGENTS[a]?.full || a} → ${m}`, opts.live);
-  } else if (e.kind === "loop") {
-    flash("loop-reviewer", 2600); flash("loop-fact_checker", 2600);
-    setNow("Not approved: sending the draft back to the Writer with the reviewers' feedback", opts.live);
+  const d = e.data || {}, m = e.message, phase2 = isCase(e), node = nodeOf(e);
+  if (phase2 && S.phase === 1) {
+    S.phase = 2;
+    S.working.clear();
+    addDivider(`Phase 2 · case ${d.case}: the appeal leaves the agent run and becomes a long-running case`);
   }
-  if (a === "orchestrator") {
-    $("orchStatus").textContent = e.kind === "start" ? m : $("orchStatus").textContent;
+  const ns = nodeStats(node);
+  ns.recent.push(e); if (ns.recent.length > 40) ns.recent.shift();
+
+  // model calls: tokens, cost, time, per agent and per stage
+  if (d.input_tokens !== undefined) {
+    const cost = d.cost_usd !== undefined ? d.cost_usd : d.input_tokens * 4e-6 + d.output_tokens * 20e-6;
+    S.calls++; S.tin += d.input_tokens; S.tout += d.output_tokens; S.cost += cost;
+    ns.calls++; ns.tin += d.input_tokens; ns.tout += d.output_tokens; ns.cost += cost; ns.secs += d.duration_s || 0;
+    if (d.model) ns.models.add(d.model + (d.fallback_used ? " (fallback)" : ""));
+    if (d.effort) ns.efforts.add(d.effort);
+    const r = d.stage && S.stages.get(d.stage);
+    if (r) { r.calls++; r.cost += cost; r.tin += d.input_tokens; r.tout += d.output_tokens; }
+    $("sCalls").textContent = S.calls;
+    $("sTokens").textContent = `${fmtNum(S.tin)} / ${fmtNum(S.tout)}`;
+    $("sCost").textContent = fmtUsd(S.cost);
+    $("sCostL").textContent = phase2 ? "est. cost, run + case so far" : "est. cost, running total";
+  }
+
+  // stages: start / done / retry
+  const st = m.match(/^([A-Za-z0-9_]+) \(attempt (\d+)\/(\d+)\)/);
+  if (e.kind === "start" && st) {
+    const r = stageRec(st[1], node, ts);
+    r.attempts = +st[2]; r.status = "running";
+    if (d.inputs) r.inputs = d.inputs;
+    const rec = m.split(" · received ")[1]; if (rec) r.received = rec;
+    if (d.feedback_from_previous_attempt) r.feedback = d.feedback_from_previous_attempt;
+    setNode(node, "working", `${st[1]} · try ${st[2]}/${st[3]}`);
+    S.working.set(node, st[1]);
+    refreshNow(opts.live);
+  } else if (e.kind === "start") {
+    setNode(node, "working", d.type === "simulated_scene" ? `scene: ${d.scene}` : undefined);
+  }
+  const doneStage = e.kind === "done" && !d.type && (d.stage || (m.match(/^([A-Za-z0-9_]+) complete/) || [])[1]);
+  if (doneStage && (d.output !== undefined || d.total_duration_s !== undefined || / complete$/.test(m))) {
+    const r = stageRec(doneStage, node, ts);
+    r.status = "done";
+    r.output = d.output !== undefined ? d.output : r.output;
+    r.secs = d.total_duration_s !== undefined ? d.total_duration_s : (ts - r.startTs) / 1000;
+    r.summary = m.includes(" · ") ? m.slice(m.indexOf(" · ") + 3) : "";
+    setNode(node, "done", `✓ ${doneStage} · ${fmtSecs(r.secs)}`);
+    S.working.delete(node); refreshNow(opts.live);
+  } else if (e.kind === "done" && a_isAgent(node) && node !== "human") {
+    setNode(node, "done");
+  }
+  if (e.kind === "retry") {
+    S.retries++; $("sRecovered").textContent = S.retries;
+    const r = d.stage && S.stages.get(d.stage);
+    if (r) r.retries.push({ reason: d.reason || m, fed: d.fed_back_to_agent, secs: d.duration_s, wait: d.wait_s });
+    setNode(node, "retry", "↻ retrying");
+    setNow(`${AGENTS[node]?.full || e.agent} hit a failure and is retrying${d.fed_back_to_agent ? " with the validator's feedback" : ""}`, opts.live);
+  } else if (e.kind === "error") {
+    S.working.delete(node);
+    setNode(node, "error", "✗ failed");
+    setNow(`${AGENTS[node]?.full || e.agent}: ${m}`, false);
+  } else if (e.kind === "handoff") {
+    const targets = (d.to || Object.keys(AGENTS).filter((k) => m.startsWith(k))).map((t) => mapTarget(t, phase2));
+    for (const t of targets) { flash(`e-${node}-${t}`); flash(`e2-${node}-${t}`); }
+    ns.sent.push({ to: targets, artifact: d.artifact, message: m });
+    if (!S.working.size) setNow(`${AGENTS[node]?.full || e.agent} → ${m}`, opts.live);
+  } else if (e.kind === "loop") {
+    if (phase2) flash("loop2", 2600); else { flash("loop-reviewer", 2600); flash("loop-fact_checker", 2600); }
+    setNow(phase2 ? "Reply not fully verified: back to the Writer with the Fact Checker's findings"
+                  : "Not approved: sending the draft back to the Writer with the reviewers' feedback", opts.live);
+  }
+  if (e.agent === "orchestrator") {
+    if (e.kind === "start") $("orchStatus").textContent = d.run ? `run ${d.run}${d.resumed ? " (resumed)" : ""}` : m.slice(0, 60);
     if (d.packet || /appeal packet ready/.test(m)) {
       S.packet = true; setPacket(true);
       setNode("packager", "done", "✓ packet ready");
@@ -553,47 +795,118 @@ function apply(e, opts = {}) {
     }
     if (/approved by reviewer/.test(m)) setNow("Draft approved by the Adversarial Reviewer and the Fact Checker", opts.live);
   }
+  if (phase2) applyCase(e, d, node, opts);
 
-  // merit: provisional ratings from planner / policy analyst, then the orchestrator's final verdict
-  if (d.merit) {
-    S.merit = S.merit || {};
-    S.merit[d.final ? "final" : a] = d.merit;
-    const shown = S.merit.final || S.merit.policy_analyst || S.merit.planner;
-    $("sVerdict").textContent = S.merit.final ? shown : `${shown}?`;
-    $("verdictTile").className = `stat wide verdict ${shown}`;
-    $("sVerdictWhy").textContent = S.merit.final ? "final verdict" :
-      `planner: ${S.merit.planner || "…"} · policy analyst: ${S.merit.policy_analyst || "…"}`;
-  }
-
-  // stats
-  if (d.input_tokens !== undefined) {
-    S.calls++; S.tin += d.input_tokens; S.tout += d.output_tokens;
-    $("sCalls").textContent = S.calls;
-    $("sTokens").textContent = `${fmtNum(S.tin)} / ${fmtNum(S.tout)}`;
-    $("sCost").textContent = "$" + (S.tin * 4e-6 + S.tout * 20e-6).toFixed(2);
-  }
-  let score = d.score, round = d.round;
-  if (score === undefined) { const sm = m.match(/^score (\d+)\/10 · (\w+)/); if (sm) { score = +sm[1]; d.decision = sm[2]; } }
-  if (score !== undefined && a === "reviewer") {
-    $("sScore").textContent = `${score}/10`;
-    const bar = $("scoreBar"); bar.style.width = score * 10 + "%";
-    bar.style.background = score >= 8 ? "var(--ok)" : score >= 6 ? "var(--warn)" : "var(--err)";
-    round = round || Object.keys(S.rounds).length || 1;
-    (S.rounds[round] ||= {}).score = score; S.rounds[round].decision = d.decision;
-    renderRounds();
-  }
-  const cm = m.match(/^(\d+)\/(\d+) claims verified · (\d+) problems/);
-  if (a === "fact_checker" && cm) {
-    $("sClaims").textContent = `${cm[1]}/${cm[2]}`;
-    const r = d.round || Object.keys(S.rounds).length || 1;
-    (S.rounds[r] ||= {}).claims = `${cm[1]}/${cm[2]}`; S.rounds[r].problems = +cm[3];
-    renderRounds();
-  }
-  if (a === "writer" && e.kind === "handoff") {
-    const dm = m.match(/draft (\d+) \((\d+) words/);
-    if (dm) { (S.rounds[dm[1]] ||= {}).words = +dm[2]; renderRounds(); }
+  // phase 1 tiles: merit, reviewer score, claims, rounds
+  if (!phase2) {
+    if (d.merit) {
+      S.merit = S.merit || {};
+      S.merit[d.final ? "final" : e.agent] = d.merit;
+      const shown = S.merit.final || S.merit.policy_analyst || S.merit.planner;
+      $("sVerdict").textContent = S.merit.final ? shown : `${shown}?`;
+      $("verdictTile").className = `stat wide verdict ${shown}`;
+      $("sVerdictWhy").textContent = S.merit.final ? "final verdict" :
+        `planner: ${S.merit.planner || "…"} · policy analyst: ${S.merit.policy_analyst || "…"}`;
+    }
+    let score = d.score, round = d.round;
+    if (score === undefined) { const sm = m.match(/^score (\d+)\/10 · (\w+)/); if (sm) { score = +sm[1]; d.decision = sm[2]; } }
+    if (score !== undefined && e.agent === "reviewer" && e.kind === "info") {
+      $("sScore").textContent = `${score}/10`;
+      const bar = $("scoreBar"); bar.style.width = score * 10 + "%";
+      bar.style.background = score >= 8 ? "var(--ok)" : score >= 6 ? "var(--warn)" : "var(--err)";
+      round = round || Object.keys(S.rounds).length || 1;
+      (S.rounds[round] ||= {}).score = score; S.rounds[round].decision = d.decision;
+      renderRounds();
+    }
+    const cm = m.match(/^(\d+)\/(\d+) claims verified · (\d+) problems/);
+    if (e.agent === "fact_checker" && cm) {
+      $("sClaims").textContent = `${cm[1]}/${cm[2]}`;
+      const r = d.round || Object.keys(S.rounds).length || 1;
+      (S.rounds[r] ||= {}).claims = `${cm[1]}/${cm[2]}`; S.rounds[r].problems = +cm[3];
+      renderRounds();
+    }
+    if (e.agent === "writer" && e.kind === "handoff") {
+      const dm = m.match(/draft (\d+) \((\d+) words/);
+      if (dm) { (S.rounds[dm[1]] ||= {}).words = +dm[2]; renderRounds(); }
+    }
   }
   addRow(e, opts.fresh);
+  queueRender();
+}
+const a_isAgent = (id) => !!AGENTS[id];
+
+// phase 2: mailbox, tasks, approvals, outcome
+function applyCase(e, d, node, opts) {
+  const c = S.caze ||= { id: d.case, status: null, msgs: new Map(), tasks: new Map(), deadlines: [], outcome: null, allow: [] };
+  const say = (t, live = opts.live) => setNow(t, live);
+  switch (d.type) {
+    case "case_opened":
+      c.allow = d.insurer_allow_list || []; c.reply = d.reply_address; c.run = d.run;
+      setNode("case_worker", "done", "case opened"); say("Case opened from the run: the appeal letter waits for your approval");
+      break;
+    case "simulated_scene": say(`Scripted insurer (SIMULATED) plays the '${d.scene}' scene`); break;
+    case "email_received":
+      c.msgs.set(d.correspondence, { id: d.correspondence, dir: "in", subject: d.subject, simulated: d.simulated,
+                                     trusted: d.trusted_sender, sender: d.sender, reply: d.in_reply_to });
+      flash("e2-insurer_sim-connector", 2200);
+      setNode("insurer_sim", "done", `sent ${d.correspondence}${d.simulated ? " (sim)" : ""}`);
+      setNode("connector", "done", `↓ ${d.correspondence} received`);
+      say(`Email ${d.correspondence} arrived${d.simulated ? " from the SIMULATED insurer" : ""} · redacting it before any agent reads it`);
+      break;
+    case "email_sent":
+      c.msgs.set(d.correspondence, { id: d.correspondence, dir: "out", subject: d.subject, to: d.to, outbox: d.outbox,
+                                     attachments: d.attachments || [], connector: d.connector });
+      flash("e2-connector-insurer_sim", 2200);
+      setNode("connector", "done", `↑ ${d.correspondence} sent`);
+      setNode("insurer_sim", "idle", `got ${d.correspondence}`);
+      say(`Sent ${d.outbox} to ${d.to} after your approval`);
+      break;
+    case "allow_list_check":
+      if (d.result === "passed") { setNode("human", "done", `approved ${d.outbox}`); flash("e2-human-connector", 2600); }
+      else setNode("human", "error", `blocked ${d.outbox}`);
+      break;
+    case "task_created":
+      c.tasks.set(d.task, { id: d.task, title: d.title, owner: d.owner, status: "open", due: d.due_date, kind: d.task_kind });
+      if (d.owner === "user") { setNode("human", "waiting", `to do: ${d.task}`); flash("e2-case_worker-human", 2200);
+        say(`Waiting for you: ${d.title}`, false); }
+      break;
+    case "task_completed": {
+      const t = c.tasks.get(d.task); if (t) t.status = "done";
+      if (![...c.tasks.values()].some((t) => t.status === "open" && t.owner === "user")) setNode("human", "done");
+      break;
+    }
+    case "upload":
+      setNode("human", "done", `uploaded ${d.upload}`); flash("e2-human-case_worker", 2200);
+      say(`You uploaded ${d.name} for ${d.task}`);
+      break;
+    case "outbox_queued":
+      if (d.outbox_kind !== "initial_appeal") flash("e2-c_fact_checker-case_worker", 2200);
+      setNode("case_worker", "done", `${d.outbox} queued`);
+      break;
+    case "status_change":
+      c.status = d.to_status;
+      setNode("case_worker", d.to_status === "action_required" ? "working" : "done", `status: ${(d.to_status || "").replace(/_/g, " ")}`);
+      break;
+    case "redaction":
+      setNode("c_intake", "done", `✓ redacted · ${d.new_identifiers || 0} new`); flash("e2-c_intake-correspondence");
+      break;
+    case "outcome_confirmed":
+      c.outcome = { result: d.outcome, quote: d.quote };
+      setNode("human", "done", "confirmed outcome"); setNode("case_worker", "done", `closed · ${d.outcome}`);
+      say(`Case closed: denial ${String(d.outcome).replace(/_/g, " ")} (confirmed by you)`, false);
+      break;
+    case "case_summary": c.summary = d; break;
+  }
+  if (e.agent === "correspondence" && e.kind === "start" && /^reading /.test(e.message)) {
+    flash("e2-connector-c_intake"); setNode("c_intake", "working", "redacting…");
+  }
+  if (e.agent === "correspondence" && e.kind === "done" && d.output) {
+    const msg = c.msgs.get(d.correspondence); if (msg) msg.analysis = d.output;
+    setNode("correspondence", "done", `✓ ${d.correspondence} ${String(d.message_type || "").replace(/_/g, " ")}`);
+  }
+  if (d.deadline) c.deadlines.push({ date: d.deadline, text: e.message });
+  $("phase2Note").textContent = `case ${c.id}` + (c.status ? ` · status: ${c.status.replace(/_/g, " ")}` : "")
+    + (c.outcome ? ` · outcome: ${c.outcome.result}` : "");
 }
 
 function renderRounds() {
@@ -607,44 +920,225 @@ function renderRounds() {
   }).join("");
 }
 
+// ---------- structured data ----------
+const TRIVIAL = new Set(["stage", "attempt", "case"]);
+const meaningful = (d) => d && Object.keys(d).some((k) => !TRIVIAL.has(k));
+const STATUS_KEYS = new Set(["status", "verdict", "decision", "result", "supported"]);
+function fmtVal(v, key, depth = 0) {
+  if (v === null || v === undefined || v === "") return `<span class="v-none">–</span>`;
+  if (typeof v === "boolean") return `<span class="v-${v}">${v ? "yes" : "no"}</span>`;
+  if (typeof v === "number") {
+    if (key && /cost/.test(key)) return "$" + v.toFixed(4);
+    if (key && /(_s|seconds)$/.test(key)) return fmtSecs(v);
+    return v.toLocaleString();
+  }
+  if (typeof v === "string") {
+    if (/^https?:\/\/\S+$/.test(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`;
+    if (STATUS_KEYS.has(key)) return `<span class="st-${esc(v)}">${esc(v.replace(/_/g, " "))}</span>`;
+    return esc(v);
+  }
+  if (depth > 6) return esc(JSON.stringify(v));
+  if (Array.isArray(v)) {
+    if (!v.length) return `<span class="v-none">none</span>`;
+    if (v.every((x) => typeof x !== "object" || x === null)) return `<ul>${v.map((x) => `<li>${fmtVal(x, key, depth + 1)}</li>`).join("")}</ul>`;
+    return v.map((x) => `<div class="obj">${fmtVal(x, key, depth + 1)}</div>`).join("");
+  }
+  const ks = Object.keys(v);
+  if (!ks.length) return `<span class="v-none">–</span>`;
+  return `<dl class="kv">${ks.map((k) => `<dt>${esc(k.replace(/_(s|usd)$/, "").replace(/_/g, " "))}</dt><dd>${fmtVal(v[k], k, depth + 1)}</dd>`).join("")}</dl>`;
+}
+function dataHtml(d) {
+  const o = {};
+  for (const k of Object.keys(d)) if (!TRIVIAL.has(k)) o[k] = d[k];
+  if (d.stage) o.stage = d.stage + (d.attempt ? ` (attempt ${d.attempt})` : "");
+  return fmtVal(o);
+}
+
+// ---------- log ----------
 const ICON = { start: "▶", done: "✓", handoff: "→", retry: "↻", error: "✗", loop: "⟲", warn: "!", info: "·" };
-function addRow(e, fresh) {
-  const a = AGENTS[e.agent] || { full: e.agent, color: "#aaa" };
-  let cls = e.kind;
-  if (e.data && e.data.input_tokens !== undefined) cls = "usage";
-  if (e.message.startsWith("web search:")) cls = "search";
+function addDivider(text) {
   const row = document.createElement("div");
-  row.className = `row ${cls}${fresh ? " fresh" : ""}`;
+  row.className = "row phase";
+  row.innerHTML = `<span class="t">${fmtTime(S.virtual)}</span><span class="m" style="grid-column: 2 / -1">${esc(text)}</span>`;
+  $("log").appendChild(row);
+}
+function toggleRow(row, open) {
+  open = open === undefined ? !row.classList.contains("open") : open;
+  row.classList.toggle("open", open);
+  let box = row.nextElementSibling && row.nextElementSibling.classList.contains("rowdata") ? row.nextElementSibling : null;
+  if (open && !box) {
+    box = document.createElement("div");
+    box.className = "rowdata" + (row.classList.contains("usage") ? " usage" : "");
+    box.style.setProperty("--c", row.style.getPropertyValue("--c"));
+    box.innerHTML = dataHtml(row._data);
+    row.after(box);
+  } else if (!open && box) box.remove();
+}
+function addRow(e, fresh) {
+  const node = nodeOf(e);
+  const a = AGENTS[node] || AGENTS[e.agent] || { full: e.agent, color: "#aaa" };
+  const d = e.data || {};
+  let cls = e.kind;
+  if (d.input_tokens !== undefined) cls = "usage";
+  if (e.message.startsWith("web search")) cls = "search";
+  if (e.agent === "insurer_sim" || d.simulated === true) cls += " sim";
+  const row = document.createElement("div");
+  row.className = `row ${cls}${fresh ? " fresh" : ""}${meaningful(d) ? " has-data" : ""}`;
   row.style.setProperty("--c", a.color);
-  row.innerHTML = `<span class="t">${fmtTime(S.virtual)}</span><span class="a">${esc(a.full)}</span>
+  row.innerHTML = `<span class="t">${fmtTime(S.virtual)}</span><span class="a" title="${esc(a.full)}: show details">${esc(a.full)}</span>
     <span class="k">${ICON[e.kind] || "·"}</span><span class="m">${esc(e.message)}</span>`;
+  if (meaningful(d)) { row._data = d; row.onclick = () => toggleRow(row); }
+  row.querySelector(".a").onclick = (ev) => { ev.stopPropagation(); select(node); };
   const log = $("log");
   const stick = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
   log.appendChild(row);
   if (stick || fresh) log.scrollTop = log.scrollHeight;
 }
+$("showCalls").onchange = () => $("log").classList.toggle("nocalls", !$("showCalls").checked);
+$("expandAll").onclick = () => {
+  const rows = [...$("log").querySelectorAll(".row.has-data")];
+  const open = !rows.every((r) => r.classList.contains("open"));
+  for (const r of rows) toggleRow(r, open);
+  $("expandAll").textContent = open ? "Collapse all" : "Expand all";
+};
+
+// ---------- side panels ----------
+let renderQueued = false;
+function queueRender() {
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => { renderQueued = false; renderTimings(); renderCaseBox(); if (S.sel) renderDetail(); });
+}
+function select(id) {
+  S.sel = id;
+  for (const g of document.querySelectorAll("[data-node]")) g.classList.toggle("sel", g.dataset.node === id);
+  renderDetail();
+}
+function renderDetail() {
+  const id = S.sel, a = AGENTS[id] || { full: id, color: "#aaa" }, n = S.nodes[id];
+  const phase = a.p === 2 ? "Phase 2 · case" : a.p === 1 ? "Phase 1 · run" : "";
+  let h = `<div class="dh" style="--c:${a.color}"><span class="dot"></span><b>${esc(a.full)}</b>
+    <span class="badge muted">${phase}</span>${id === "insurer_sim" ? `<span class="badge sim">simulated</span>` : ""}</div>
+    <div class="role">${esc(ROLE_LONG[id] || "")}</div>`;
+  if (!n) { $("detail").innerHTML = h + `<div class="empty">Nothing yet in this run.</div>`; return; }
+  const retries = n.stages.reduce((s, r) => s + r.retries.length, 0);
+  const stageSecs = n.stages.reduce((s, r) => s + (r.secs || 0), 0);
+  h += `<div class="mstats">
+    <div><div class="v">${n.calls}</div><div class="l">model calls</div></div>
+    <div><div class="v">${fmtNum(n.tin)} / ${fmtNum(n.tout)}</div><div class="l">tokens in / out</div></div>
+    <div><div class="v">${fmtUsd(n.cost)}</div><div class="l">est. cost</div></div>
+    <div><div class="v">${n.stages.length ? fmtSecs(stageSecs) : "–"}</div><div class="l">stage time</div></div>
+    <div><div class="v">${fmtSecs(n.secs)}</div><div class="l">time in model</div></div>
+    <div><div class="v">${retries}</div><div class="l">retries</div></div></div>`;
+  if (n.models.size) h += `<div class="models">${esc([...n.models].join(", "))} · effort ${esc([...n.efforts].join(", ") || "–")}</div>`;
+  n.stages.forEach((r, i) => {
+    h += `<details${i === n.stages.length - 1 ? " open" : ""}><summary><span class="sn">${esc(r.name)}</span>
+      <span class="ss">${r.status === "running" ? "running…" : fmtSecs(r.secs)} · ${r.calls} call${r.calls === 1 ? "" : "s"} · ${fmtUsd(r.cost)}${r.attempts > 1 ? ` · ${r.attempts} attempts` : ""}</span></summary><div class="body">
+      <h4>Received</h4>${r.received ? `<div class="recv">${esc(r.received)}</div>` : ""}${r.inputs && meaningful(r.inputs) ? fmtVal(r.inputs) : ""}
+      ${r.retries.map((x) => `<div class="retryn">↻ ${esc(x.reason)}${x.fed ? ` · fed back to the agent: “${esc(x.fed)}”` : " · retried with the same inputs"}</div>`).join("")}
+      <h4>Produced</h4>${r.summary ? `<div class="recv">${esc(r.summary)}</div>` : ""}
+      ${r.output && meaningful(r.output) ? fmtVal(r.output) : r.status === "running" ? `<div class="empty">working…</div>` : ""}</div></details>`;
+  });
+  if (n.sent.length) h += `<h4>Handoffs</h4><div class="handoffs">${n.sent.map((s) => `<div>→ ${esc(s.to.map((t) => AGENTS[t]?.full || t).join(" + "))}${s.artifact ? ` · ${esc(s.artifact)}` : ""}</div>`).join("")}</div>`;
+  if (!n.stages.length) {
+    h += `<h4>Recent activity</h4>` + n.recent.slice(-14).map((e) =>
+      `<div class="recv">${ICON[e.kind] || "·"} ${esc(e.message)}</div>`).join("");
+  }
+  $("detail").innerHTML = h;
+}
+function renderTimings() {
+  const list = [...S.stages.values()];
+  if (!list.length) return;
+  const max = Math.max(1, ...list.map((r) => r.secs || 0));
+  let h = "", phase = 0;
+  for (const r of list) {
+    if (r.phase !== phase) { phase = r.phase; h += `<div class="sep">${phase === 1 ? "Phase 1 · agent run" : "Phase 2 · case"}</div>`; }
+    const node = AGENTS[r.node] || { color: "#aaa" };
+    h += `<div class="tr" data-node="${esc(r.node)}" style="--c:${node.color}" title="${esc(r.name)}: ${r.attempts} attempt(s), ${r.calls} model call(s)">
+      <span class="tn">${esc(r.name)}</span>
+      <span class="bar"><div class="${r.retries.length ? "retried" : ""}" style="width:${(r.secs || 0) / max * 100}%"></div></span>
+      <span class="tv">${r.status === "running" ? "…" : fmtSecs(r.secs)} <small>${r.cost ? fmtUsd(r.cost) : ""}</small></span></div>`;
+  }
+  const total = list.reduce((s, r) => s + (r.secs || 0), 0);
+  h += `<div class="sep">total stage time ${fmtSecs(total)} (parallel stages overlap) · striped = retried</div>`;
+  $("timings").innerHTML = h;
+  for (const el of $("timings").querySelectorAll(".tr")) el.onclick = () => select(el.dataset.node);
+}
+function renderCaseBox() {
+  const c = S.caze;
+  if (!c) return;
+  const STXT = { awaiting_human: "Waiting for you", awaiting_insurer: "Waiting for insurer", action_required: "Agents working", closed: "Closed" };
+  let h = `<div class="chead">${c.status ? `<span class="pill st-${esc(c.status)}">${esc(STXT[c.status] || c.status)}</span>` : ""}
+    <span class="cid">${esc(c.id || "")}</span></div>`;
+  if (c.outcome) h += `<div>Outcome: <b style="color:var(--ok)">denial ${esc(String(c.outcome.result).replace(/_/g, " "))}</b> · confirmed by you
+    ${c.outcome.quote ? `<blockquote class="q" style="margin-top:6px">“${esc(c.outcome.quote)}”</blockquote>` : ""}</div>`;
+  if (c.allow.length) h += `<div class="cid">Approve &amp; send allow-list: ${esc(c.allow.join(", "))}</div>`;
+  const msgs = [...c.msgs.values()];
+  h += `<h4>Mailbox</h4>` + (msgs.length ? msgs.map((x) => {
+    const a = x.analysis;
+    return `<div class="cmsg ${x.dir}"><div class="mh"><b>${x.dir === "in" ? "↓ " + esc(x.id) + " in" : "↑ " + esc(x.id) + " out"}</b>
+      ${x.simulated ? `<span class="badge sim">simulated insurer</span>` : ""}${x.dir === "in" && x.trusted === false ? `<span class="badge untrusted">untrusted</span>` : ""}
+      ${a ? `<span class="badge type">${esc(String(a.message_type).replace(/_/g, " "))}</span>` : ""}
+      ${x.dir === "out" ? `<span class="badge conf">approved by you</span>` : ""}${x.reply ? `<span>re ${esc(x.reply)}</span>` : ""}</div>
+      <div class="s">${esc(x.subject || "")}</div>
+      ${x.dir === "out" ? `<div class="an">to ${esc(x.to || "")} · from draft ${esc(x.outbox || "")}${x.attachments.length ? ` · 📎 ${esc(x.attachments.join(", "))}` : ""}</div>` : ""}
+      ${a ? `<div class="an"><span class="by">Correspondence agent</span>${esc(a.summary || "")}</div>` : ""}</div>`;
+  }).join("") : `<div class="empty">No email yet</div>`);
+  const tasks = [...c.tasks.values()];
+  if (tasks.length) h += `<h4>Tasks</h4><div class="ctasks">${tasks.map((t) => `<div class="t ${t.status}"><span class="id">${esc(t.id)}</span>
+    <span class="ti">${esc(t.title)}${t.due ? ` · due ${esc(t.due)}` : ""}</span><span class="who">${esc(t.owner)}</span></div>`).join("")}</div>`;
+  if (c.deadlines.length) h += `<h4>Deadlines</h4>` + c.deadlines.map((x) => `<div class="cid">${esc(x.text)}</div>`).join("");
+  if (c.summary) h += `<h4>Case totals</h4><div class="cid">${c.summary.emails_in} emails in · ${c.summary.emails_out} out · ${c.summary.model_calls} model calls · ${fmtUsd(c.summary.cost_usd)}</div>`;
+  $("caseBox").innerHTML = h;
+}
 
 // ---------- modes ----------
-let source = null, timer = null, paused = false, queue = [], runId = null;
+let source = null, caseSource = null, casePoll = null, timer = null, paused = false, queue = [], runId = null;
 function stopAll() {
   if (source) { source.close(); source = null; }
+  if (caseSource) { caseSource.close(); caseSource = null; }
+  clearInterval(casePoll); casePoll = null;
   clearTimeout(timer); timer = null; queue = []; paused = false;
   $("pauseBtn").disabled = true; $("pauseBtn").textContent = "Pause";
 }
 async function loadRuns(selectId) {
   const runs = await (await fetch(API.runs())).json();
   $("runSel").innerHTML = runs.map((r) =>
-    `<option value="${esc(r.id)}">${esc(r.id)} · ${esc(r.status)}${r.has_packet ? " · packet" : ""}</option>`).join("")
+    `<option value="${esc(r.id)}">${esc(r.id)} · ${esc(r.status)}${r.has_packet ? " · packet" : ""}${r.case_id ? ` · case ${esc(r.outcome || r.case_status || "")}` : ""}</option>`).join("")
     || `<option value="">no runs yet</option>`;
   if (selectId) $("runSel").value = selectId;
   return runs;
 }
+// A run's events plus the case opened from it (static: one file; live: the server finds the newest case)
+async function runData(id) {
+  const data = await (await fetch(API.events(id))).json();
+  if (!STATIC && data.case === undefined) {
+    try { data.case = (await (await fetch(`/api/runs/${id}/case`)).json()).case; } catch { data.case = null; }
+  }
+  return data;
+}
+function followCase(id, caseId, from) {  // live only: keep the case's timeline streaming in
+  caseSource = new EventSource(`/api/cases/${encodeURIComponent(caseId)}/stream?from=${from}`);
+  caseSource.onmessage = (msg) => { if (runId === id) apply(JSON.parse(msg.data), { live: true, fresh: true }); };
+}
+function waitForCase(id) {  // live only: a case can be opened from the run at any time after it finishes
+  casePoll = setInterval(async () => {
+    if (runId !== id) return;
+    const { case: c } = await (await fetch(`/api/runs/${id}/case`)).json();
+    if (!c) return;
+    clearInterval(casePoll); casePoll = null;
+    for (const e of c.events) apply(e, { live: true, fresh: true });
+    followCase(id, c.id, c.events.length);
+  }, 4000);
+}
 async function showFinal(id) {
   stopAll(); resetState(); runId = id;
-  const { events, status } = await (await fetch(API.events(id))).json();
+  const { events, status, case: c } = await runData(id);
   for (const e of events) apply(e);
-  $("modeTxt").textContent = `${status} · ${events.length} events`;
+  if (c) for (const e of c.events) apply(e);
+  $("modeTxt").textContent = `${status} · ${events.length} run events${c ? ` + ${c.events.length} case events` : ""}`;
   if (!S.packet && status !== "running") setNow(status === "failed" ? "Run failed: resume it from the terminal" : `Run ${status}`, false);
+  if (!STATIC) c ? followCase(id, c.id, c.events.length) : waitForCase(id);
 }
 function watchLive(id) {
   stopAll(); resetState(); runId = id;
@@ -656,26 +1150,29 @@ function watchLive(id) {
   setTimeout(() => (backlog = false), 600);
   source.addEventListener("end", (msg) => {
     const { status } = JSON.parse(msg.data);
-    $("modeTxt").textContent = `finished · ${status}`;
+    $("modeTxt").textContent = `finished · ${status} · watching for the case`;
     if (!S.packet) setNow(`Run ${status}`, false);
     source.close(); source = null; loadRuns(id);
+    waitForCase(id);
   });
 }
 async function replay(id) {
   stopAll(); resetState(); runId = id;
-  const { events } = await (await fetch(API.events(id))).json();
-  queue = events.slice();
+  const { events, case: c } = await runData(id);
+  const all = events.concat(c ? c.events : []);
+  queue = all.slice();
   $("pauseBtn").disabled = false;
   const step = () => {
     if (paused) return;
     const e = queue.shift();
     if (!e) { $("pauseBtn").disabled = true; $("modeTxt").textContent = "replay finished"; return; }
     apply(e, { live: true, fresh: true });
-    $("modeTxt").textContent = `replay ${$("speedSel").value}× · ${events.length - queue.length}/${events.length}`;
+    $("modeTxt").textContent = `replay ${$("speedSel").value}× · ${all.length - queue.length}/${all.length}`;
     const next = queue[0];
     if (!next) return step();
     const gap = Math.max(Date.parse(next.ts) - Date.parse(e.ts), 0) / Number($("speedSel").value);
-    timer = setTimeout(step, Math.min(Math.max(gap, 60), 1500)); // keep a readable rhythm, skip long waits
+    const phaseBreak = isCase(next) && !isCase(e);
+    timer = setTimeout(step, phaseBreak ? 2500 : Math.min(Math.max(gap, 60), 1500)); // keep a readable rhythm, skip long waits
   };
   step();
   $("pauseBtn").onclick = () => {

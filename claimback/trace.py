@@ -32,9 +32,11 @@ def artifact_input(**artifacts) -> dict:
     return {"artifacts": {k: size(v) for k, v in artifacts.items() if v is not None}}
 
 
-def _list(items, n=None):
-    items = list(items)
-    return items if n is None else items[:n]
+def short(text: str, n: int = 90) -> str:
+    """First sentence or n characters, for one-line messages; the full text stays in data."""
+    text = " ".join(str(text).split())
+    first = text.split(". ")[0]
+    return first if len(first) <= n else first[:n - 1].rstrip() + "…"
 
 
 # ---- run stages ---------------------------------------------------------------------
@@ -74,7 +76,7 @@ def plan(out: dict) -> tuple[str, dict]:
 
 def policy(out: dict) -> tuple[str, dict]:
     st = Counter(c["status"] for c in out["criteria"])
-    msg = (f"{out['policy_identified']}: {st.get('met', 0)}/{len(out['criteria'])} criteria met"
+    msg = (f"{short(out['policy_identified'], 70)}: {st.get('met', 0)}/{len(out['criteria'])} criteria met"
            + (f", {st['unclear']} unclear" if st.get("unclear") else "")
            + (f", {st['not_met']} not met" if st.get("not_met") else "")
            + f" · {len(out['discrepancies'])} discrepancies in the denial · merit {out['merit']}")
