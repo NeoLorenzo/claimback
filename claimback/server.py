@@ -242,7 +242,7 @@ class Handler(BaseHTTPRequestHandler):
         if raw is None:
             return
         fn = _backend(fn_name)
-        refused = _backend("ActionRefused") or ValueError
+        refused = _backend("ActionRefused") or type("NoActionRefused", (Exception,), {})
         if fn is None:
             return self._json({"error": "not built yet"}, 501)
         try:
@@ -258,7 +258,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "message_id": fn(d.name, body.get("outbox_id", ""))})
             fn(d.name, body.get("task_id", ""))
             return self._json({"ok": True})
-        except (refused, ValueError, LookupError, PermissionError) as e:
+        except refused as e:  # valid request, but the case's state or allow-list says no
+            return self._json({"error": str(e) or "refused"}, 409)
+        except (ValueError, LookupError) as e:  # malformed body, bad base64
             return self._json({"error": str(e) or type(e).__name__}, 400)
         except Exception as e:  # keep the server up; the panel shows the message
             return self._json({"error": f"{type(e).__name__}: {e}"}, 500)

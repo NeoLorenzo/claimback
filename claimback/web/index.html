@@ -214,6 +214,10 @@ blockquote.q cite { display: block; margin-top: 4px; font-style: normal; color: 
 .ob .ofoot { padding: 10px 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .ob .ofoot .note { color: var(--muted); font-size: 12.5px; }
 .ob details summary { padding: 8px 14px; cursor: pointer; color: var(--muted); font-size: 13px; }
+.ob .issues { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px;
+  background: color-mix(in srgb, var(--warn) 9%, transparent); color: #f1e6c8; }
+.ob .issues b { color: var(--warn); font-weight: 600; }
+.ob .issues ul { margin: 6px 0 0; padding-left: 18px; }
 button.send { background: #1d4ed8; border-color: #3b82f6; font-weight: 600; padding: 9px 18px; }
 
 .dl { display: flex; flex-direction: column; gap: 8px; }
@@ -881,6 +885,7 @@ function renderCase() {
     const [stText, stCls] = OUTBOX_STATUS[o.status] || [human(o.status), "action_required"];
     const ok = allow.has(String(o.to || "").toLowerCase());
     const body = o.body == null ? `<div class="empty" style="padding:10px 14px">Draft body not available</div>` : `<pre class="body">${esc(o.body)}</pre>`;
+    const fc = o.fact_check, issues = o.open_issues || [];
     return `<div class="ob${pending ? " pending" : ""}" id="ob-${esc(o.id)}">
       <div class="oh"><span class="k">${esc(human(o.kind))}</span><span class="badge muted">${esc(o.id)}</span>
         <span class="pill st-${stCls}">${esc(stText)}</span></div>
@@ -891,7 +896,10 @@ function renderCase() {
         ${o.in_reply_to ? `<span class="l">Thread</span><span class="mono" style="font-size:12px">in reply to ${esc(o.in_reply_to)}</span>` : ""}
         ${(o.attachments || []).length ? `<span class="l">Attach</span><span>${o.attachments.map((uid) =>
           `<span class="badge muted">📎 ${esc((uploadsById[uid] || {}).name || uid)}</span>`).join(" ")}</span>` : ""}
+        ${fc ? `<span class="l">Checked</span><span><span class="badge ${fc.verified === fc.claims ? "conf" : "unconf"}">Fact Checker: ${esc(fc.verified)}/${esc(fc.claims)} claims verified</span></span>` : ""}
       </div>
+      ${issues.length ? `<div class="issues"><b>Check these yourself before sending</b>
+        <ul>${issues.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></div>` : ""}
       ${pending ? body + `<div class="ofoot"><span class="note">Nothing leaves this computer until you click.</span>
           <button class="send" data-approve="${esc(o.id)}" ${ok ? "" : "disabled"}>Approve &amp; send</button></div>`
         : `<details><summary>Show the letter</summary>${body}</details>`}
@@ -1029,6 +1037,13 @@ function showView(name) {
 }
 $("tabRun").onclick = () => showView("run");
 $("tabCases").onclick = () => showView("cases");
+window.addEventListener("hashchange", () => {
+  if (STATIC) return;
+  const want = location.hash.startsWith("#cases") ? "cases" : "run";
+  const id = decodeURIComponent(location.hash.split("/")[1] || "");
+  showView(want);
+  if (want === "cases" && id && id !== C.id && casesStarted && C.list.some((c) => c.id === id)) selectCase(id);
+});
 
 (async () => {
   resetState();
