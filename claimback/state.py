@@ -2,6 +2,7 @@
 interrupted run resumes from the last completed stage."""
 import json
 import os
+import sys
 import threading
 import time
 from dataclasses import asdict, dataclass, field
@@ -9,6 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 RUNS_DIR = Path(__file__).resolve().parent.parent / "runs"
+_write_hooks: list = []  # called with (path, data) after each atomic write, e.g. to mirror to the hosted app
+
+
+def add_write_hook(fn) -> None:
+    _write_hooks.append(fn)
 
 
 def _now() -> str:
@@ -23,11 +29,16 @@ def atomic_write_json(path: Path, data) -> None:
     for attempt in range(20):  # Windows refuses the swap while a reader (e.g. the web view) has the file open
         try:
             os.replace(tmp, path)  # atomic on the same volume
-            return
+            break
         except PermissionError:
             if attempt == 19:
                 raise
             time.sleep(0.05)
+    for hook in _write_hooks:
+        try:
+            hook(path, data)
+        except Exception as e:  # a mirror must never break the run
+            print(f"[write hook failed: {type(e).__name__}: {e}]", file=sys.stderr)
 
 
 @dataclass
