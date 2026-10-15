@@ -128,7 +128,7 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
             result = ops.upload(owner, args["case_id"], args["task_id"], name, data)
             volume.commit()
             _job(job_id, status="running", result={"note": "drafting the reply"})
-            ops.advance([args["case_id"]])
+            ops.read_now(args["case_id"])  # the upload is already here: no mailbox check needed
         elif kind == "simulate" and args.get("direct"):
             ops.simulate(owner, args["case_id"], args["scene"], direct=True)
         elif kind == "simulate":
@@ -162,8 +162,8 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
 # Every message it sends is marked as simulated; it goes through case_ops, so it's serialized
 # with everything else that touches the case.
 INSURER_SCRIPT = {
-    "initial_appeal": [(1, "ack"), (2, "evidence-request")],
-    "evidence_response": [(2, "overturned")],
+    "initial_appeal": [(1, "ack"), (1, "evidence-request")],
+    "evidence_response": [(1, "overturned")],
 }
 
 
