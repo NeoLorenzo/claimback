@@ -4,7 +4,7 @@ AgentError so the orchestrator can retry."""
 import os
 
 import anthropic
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from .log import emit
 
@@ -67,7 +67,11 @@ def call(agent: str, system: str, user: str | list, schema: type[BaseModel],
             output_config={"effort": effort},
             betas=["server-side-fallback-2026-07-01"],
             fallbacks="default",
+            timeout=900 if max_tokens > 16000 else anthropic.NOT_GIVEN,
         )
+    except ValidationError as e:
+        # The SDK parses before we can check stop_reason; truncated or malformed JSON lands here
+        raise AgentError(f"structured output was cut off or invalid ({e.error_count()} error(s))") from e
     except (anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.InternalServerError) as e:
         raise AgentError(f"{type(e).__name__}: {e}") from e
     except NON_RETRYABLE as e:

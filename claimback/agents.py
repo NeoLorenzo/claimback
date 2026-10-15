@@ -193,7 +193,8 @@ def write_appeal(docs, facts, run_plan, policy, evidence, previous: dict | None,
             lines += [f"- untracked statement: {u}" for u in factcheck["untracked_claims"]]
             parts.append("The fact checker could not verify these statements. Remove them, "
                          "or correct them so the sources support them:\n" + "\n".join(lines))
-    out = llm.call("writer", system, "\n\n".join(parts) + retry_note(feedback), AppealDraft, effort="high")
+    out = llm.call("writer", system, "\n\n".join(parts) + retry_note(feedback), AppealDraft, effort="high",
+                   max_tokens=48000)
     return out.model_dump()
 
 

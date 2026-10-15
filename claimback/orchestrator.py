@@ -65,7 +65,11 @@ def run_stage(state: RunState, name: str, agent: str, fn, *, retries: int = 3,
             state.fail(name, str(e))
             emit(agent, "error", f"{name}: {e} · not retryable, stopping run")
             raise
-        except AgentError as e:
+        except (AgentError, Exception) as e:
+            if isinstance(e, StopRequested):
+                raise
+            if not isinstance(e, AgentError):
+                e = AgentError(f"unexpected {type(e).__name__}: {str(e)[:200]}")
             state.fail(name, str(e))
             if attempt < retries:
                 wait = 2 ** attempt
