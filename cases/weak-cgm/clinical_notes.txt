@@ -18,7 +18,7 @@ Medications: Metformin 1000 mg PO twice daily. No insulin, no sulfonylurea.
 Labs: Hemoglobin A1c 6.6% (previous 6.8%).
 
 Assessment: Type 2 diabetes mellitus without complications, well controlled,
-not on insulin (E11.9).
+not on insulin (E11.9, Z79.84).
 
 Plan: Continue metformin. Patient requests CGM; order placed at patient
 request. Diet counseling. Recheck A1c in 6 months.

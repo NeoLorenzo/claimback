@@ -24,9 +24,19 @@ We have DENIED coverage for the service listed above.
 
 Reason for denial: Not medically necessary. Per Evergreen Mutual Medical Policy MP-DME-031, criterion I.B requires that the member be insulin-treated or have a documented history of problematic hypoglycemia. The submitted records show the member takes metformin only, is not treated with insulin, and has no documented hypoglycemia.
 
-Denial reason code: MN-04
+Denial reason code: MN-04 (Does not meet medical necessity criteria)
 
 YOUR RIGHT TO APPEAL
-You may request an internal appeal within 180 calendar days of the date of this notice.
+You have the right to request an internal appeal of this decision. Your appeal must be received within 180 calendar days of the date of this notice. You may submit written comments, documents, records, and other information relating to your claim. You may request, free of charge, copies of all documents and the clinical criteria used in making this decision.
+
+If your treating provider believes that waiting for a standard appeal could seriously jeopardize your life, health, or ability to regain maximum function, you may request an expedited appeal, which will be decided within 72 hours.
+
+You may ask us, free of charge, for the diagnosis code(s) and treatment code(s) for this request and what they mean.
+
+HOW TO ASK FOR AN EXTERNAL REVIEW
+If we uphold this denial after your internal appeal, you may ask for an independent external review by an Independent Review Organization through the Oregon Division of Financial Regulation. You must ask within four months of receiving our final internal decision. An expedited external review is available if a delay could seriously jeopardize your health.
+
+HELP WITH YOUR APPEAL
+For help with this notice or your appeal, you can contact the consumer advocates at the Oregon Division of Financial Regulation (dfr.oregon.gov).
 
 Send written appeals to: Evergreen Mutual Health Plan - Appeals and Grievances, PO Box 4415, Portland, OR 97208. Fax: 1-800-555-0177.

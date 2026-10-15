@@ -38,7 +38,8 @@ LABS (09/10/2026)
   - eGFR: 68 mL/min/1.73m2
 
 ASSESSMENT
-  1. Type 2 diabetes mellitus with hyperglycemia, insulin-treated (E11.65, Z79.4)
+  1. Type 2 diabetes mellitus with hyperglycemia, insulin-treated (E11.65, Z79.4;
+     Z79.84 for long-term metformin and empagliflozin)
   2. Recurrent nocturnal level 2 hypoglycemia (< 54 mg/dL) despite insulin dose
      reduction (E11.649)
   3. Diabetic peripheral neuropathy (E11.42)

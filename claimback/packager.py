@@ -65,7 +65,7 @@ def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, di
         f"| **Service denied** | {facts['service_requested']} |",
         f"| **Denial reason** | {facts['denial_reason_code']}: {facts['denial_reason_summary']} |",
         f"| **Appeal type** | {run_plan['appeal_type'].title()} — {run_plan['appeal_type_rationale']} |",
-        f"| **Appeal must be received by** | **{deadline:%B %d, %Y}** ({facts['appeal_window_days']} days from the {denial:%B %d, %Y} notice) |",
+        f"| **Appeal must be received by** | **{deadline:%B %d, %Y}** ({facts['appeal_window_days']} days, counted from the {denial:%B %d, %Y} notice date to be safe; the rules count from when you received it) |",
         f"| **Send to** | {send_to} |",
         f"| **Reviewer score** | {review['score']}/10 after {rounds} round(s) · {'approved' if approved else 'open issues, see below'} |",
         "",
@@ -78,7 +78,9 @@ def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, di
         "- [ ] Send by fax *and* mail, and keep the fax confirmation and a copy of everything",
         f"- [ ] Put {deadline:%B %d, %Y} in your calendar as the hard deadline",
         "- [ ] Call the plan about 7 days after sending to confirm they received the appeal",
-        "- [ ] If the denial is upheld, ask for independent external review (check the plan's deadline)",
+        "- [ ] If you haven't yet, ask the plan for a free copy of your claim file and the clinical criteria it used (you have a right to both)",
+        "- [ ] If waiting could seriously jeopardize your health, ask your doctor to request an expedited appeal (decided within 72 hours)",
+        "- [ ] If the denial is upheld, you can usually ask for an independent external review within 4 months of the final denial (the final letter explains how)",
         "",
     ]
 

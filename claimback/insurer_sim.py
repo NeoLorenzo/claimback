@@ -40,8 +40,12 @@ def _scene(name: str, case: Case, patient: str, ref: str) -> tuple[str, str]:
         "upheld": (f"Appeal decision - {case.claim_number}",
                 f"Dear {patient},\n\nWe have completed our review of appeal {ref}. Decision: the original denial "
                 f"is UPHELD. The reviewer found that the submitted records do not meet criterion I.B of Medical "
-                f"Policy MP-DME-031.\n\nYou may request an independent external review through the state "
-                f"insurance regulator within four months of the date of this letter (by {d(120)})."),
+                f"Policy MP-DME-031. This is our final internal decision.\n\nYou may request, free of charge, "
+                f"copies of all documents and the clinical criteria used in this decision.\n\nYou may request an "
+                f"independent external review through the state insurance regulator within four months of "
+                f"receiving this letter (by about {d(120)}). An expedited external review is available if a delay "
+                f"could seriously jeopardize your health. For help, contact your state insurance department's "
+                f"consumer assistance office."),
     }
     if name not in scenes:
         raise SystemExit(f"unknown scene '{name}'. Choose from: {', '.join(scenes)}")
