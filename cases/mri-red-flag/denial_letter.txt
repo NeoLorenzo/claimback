@@ -1,0 +1,34 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL PATIENT AND FICTIONAL INSURER
+
+PINECREST HEALTH ALLIANCE
+Radiology Benefit Management
+2200 Harbor View Drive, Suite 400, Tacoma, WA 98402
+Phone: 1-888-555-0161
+
+October 2, 2026
+
+Marcus Okafor
+88 Juniper Ridge Road
+Olympia, WA 98501
+
+Member ID: PHA-4410-77092
+Date of Birth: 07/22/1975
+Authorization Request #: RBM-26-1001-88412
+Ordering Provider: Elena Varga, DO (Physical Medicine & Rehabilitation)
+Service Requested: MRI lumbar spine without contrast (CPT 72148)
+Date of Request: September 29, 2026
+
+NOTICE OF PRIOR AUTHORIZATION DENIAL
+
+Dear Marcus Okafor,
+
+Your provider requested prior authorization for the service listed above. This request has been DENIED.
+
+Reason: Advanced imaging of the lumbar spine for low back pain is not medically necessary until the member has completed at least six (6) weeks of physician-directed conservative therapy. The records show symptom onset approximately five weeks before the request. Guideline RAD-114, Section 2.1, is not met.
+
+Reviewer: Pinecrest Clinical Reviewer (Family Medicine)
+
+APPEAL RIGHTS
+You or your provider may appeal this decision in writing within 180 days of the date of this letter. If your provider believes a delay could seriously jeopardize your health, you may request an expedited appeal, which will be decided within 72 hours. Your provider may also request a peer-to-peer review with a Pinecrest physician reviewer within 14 days.
+
+Send appeals to: Pinecrest Health Alliance, Appeals Unit, PO Box 9120, Tacoma, WA 98490. Fax: 1-888-555-0169.

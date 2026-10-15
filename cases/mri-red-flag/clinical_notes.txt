@@ -1,0 +1,32 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL PATIENT
+
+CASCADE SPINE & REHABILITATION
+Clinic Notes
+
+Patient: Marcus Okafor     DOB: 07/22/1975     MRN: CSR-118204
+Provider: Elena Varga, DO (PM&R)
+
+VISIT 1 - 09/08/2026
+51-year-old warehouse supervisor with low back pain radiating down the left leg
+to the top of the foot, onset approximately 08/24/2026 after lifting. No fever,
+no history of cancer, no bowel or bladder changes.
+Exam: Left ankle dorsiflexion 4/5, left great toe extension 4/5. Decreased
+sensation over the dorsum of the left foot. Straight leg raise positive on left
+at 40 degrees. Reflexes symmetric.
+Assessment: Left L5 radiculopathy.
+Plan: Physical therapy 2x/week, naproxen 500 mg twice daily, activity
+modification. Return in 3 weeks or sooner if weakness worsens.
+
+VISIT 2 - 09/29/2026
+Has attended 6 PT sessions. Pain slightly improved, but reports tripping over
+his left foot at work twice this week.
+Exam: Left ankle dorsiflexion now 3/5 (was 4/5 on 09/08), left great toe
+extension 3/5 (was 4/5). Mild left foot slap on gait. Sensation unchanged.
+No saddle anesthesia; bladder and bowel function normal.
+Assessment: Left L5 radiculopathy with PROGRESSIVE motor deficit (worsening
+dorsiflexion weakness, early foot drop) despite 3 weeks of conservative care.
+Plan: MRI lumbar spine without contrast to evaluate for compressive lesion
+(e.g. disc herniation) and guide surgical referral. Spine surgery referral
+placed pending imaging. Counseled on emergency symptoms.
+
+Electronically signed: Elena Varga, DO  09/29/2026

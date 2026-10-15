@@ -1,0 +1,26 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL PATIENT
+
+WILLAMETTE PRIMARY CARE
+Progress Note
+
+Patient: Daniel Whitfield     DOB: 11/03/1979     MRN: WPC-772031
+Date of Visit: 09/22/2026
+Provider: Priya Raman, MD
+
+HPI: 46-year-old man with type 2 diabetes diagnosed 2024, well controlled on
+metformin 1000 mg twice daily. No hypoglycemia; he has never had a glucose
+reading below 70 mg/dL. Checks fingerstick glucose about twice a week. He has
+read about CGMs and would like one to see how different meals affect his
+glucose, and to help with weight loss.
+
+Medications: Metformin 1000 mg PO twice daily. No insulin, no sulfonylurea.
+
+Labs: Hemoglobin A1c 6.6% (previous 6.8%).
+
+Assessment: Type 2 diabetes mellitus without complications, well controlled,
+not on insulin (E11.9).
+
+Plan: Continue metformin. Patient requests CGM; order placed at patient
+request. Diet counseling. Recheck A1c in 6 months.
+
+Electronically signed: Priya Raman, MD  09/22/2026

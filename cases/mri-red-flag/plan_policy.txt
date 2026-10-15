@@ -1,0 +1,37 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL INSURER POLICY
+
+PINECREST HEALTH ALLIANCE
+IMAGING GUIDELINE RAD-114: MRI OF THE LUMBAR SPINE
+Effective: 03/01/2026
+
+1. PURPOSE
+This guideline defines when MRI of the lumbar spine (CPT 72148, 72149, 72158)
+is medically necessary.
+
+2. INDICATIONS
+MRI of the lumbar spine is considered medically necessary when ANY ONE of the
+following is met:
+
+  2.1 Low back pain, with or without radiculopathy, that persists after at
+      least six (6) weeks of physician-directed conservative therapy (for
+      example physical therapy, activity modification, NSAIDs), when the
+      results would change management; OR
+
+  2.2 RED FLAG CONDITIONS, for which imaging is appropriate WITHOUT a prior
+      trial of conservative therapy:
+        a. Progressive or severe neurological deficit (for example worsening
+           motor weakness, foot drop);
+        b. Suspected cauda equina syndrome;
+        c. Suspected malignancy (history of cancer, unexplained weight loss);
+        d. Suspected infection (fever, IV drug use, immunosuppression);
+        e. Suspected fracture with significant trauma or osteoporosis; OR
+
+  2.3 Pre-operative planning when surgery is being considered.
+
+3. DOCUMENTATION
+Requests under 2.2 must include clinical documentation of the red flag finding
+(for example serial strength examinations showing progression).
+
+4. APPEALS
+Members may appeal within 180 days. A peer-to-peer review with a physician of
+the same or similar specialty as the ordering provider is available on request.

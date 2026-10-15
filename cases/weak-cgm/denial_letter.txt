@@ -1,0 +1,32 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL PATIENT AND FICTIONAL INSURER
+
+EVERGREEN MUTUAL HEALTH PLAN
+Utilization Management Department
+PO Box 4410, Portland, OR 97208
+
+October 1, 2026
+
+Daniel Whitfield
+502 Linden Court
+Eugene, OR 97401
+
+Member ID: EVM-55102938
+Date of Birth: 11/03/1979
+Claim / Request Number: UM-2026-0927-60218
+Requesting Provider: Priya Raman, MD (Internal Medicine)
+Service Requested: Continuous Glucose Monitor (CGM) system and sensors, HCPCS E2103 / A4239
+
+NOTICE OF ADVERSE BENEFIT DETERMINATION
+
+Dear Daniel Whitfield,
+
+We have DENIED coverage for the service listed above.
+
+Reason for denial: Not medically necessary. Per Evergreen Mutual Medical Policy MP-DME-031, criterion I.B requires that the member be insulin-treated or have a documented history of problematic hypoglycemia. The submitted records show the member takes metformin only, is not treated with insulin, and has no documented hypoglycemia.
+
+Denial reason code: MN-04
+
+YOUR RIGHT TO APPEAL
+You may request an internal appeal within 180 calendar days of the date of this notice.
+
+Send written appeals to: Evergreen Mutual Health Plan - Appeals and Grievances, PO Box 4415, Portland, OR 97208. Fax: 1-800-555-0177.
