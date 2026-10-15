@@ -89,6 +89,8 @@ create policy "worker status" on public.worker_heartbeat for select to authentic
 revoke insert, update, delete, truncate on public.runs, public.events, public.cases, public.jobs,
   public.worker_heartbeat from anon, authenticated;
 revoke all on public.runs, public.events, public.cases, public.jobs, public.worker_heartbeat from anon;
+grant select on public.runs, public.events, public.cases, public.jobs, public.worker_heartbeat to authenticated;
+grant all on public.runs, public.events, public.cases, public.jobs, public.worker_heartbeat to service_role;
 
 -- Live timeline: the browser subscribes to new rows (RLS still applies).
 alter publication supabase_realtime add table public.events, public.runs, public.cases, public.jobs;
