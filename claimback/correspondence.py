@@ -142,9 +142,12 @@ def validate(analysis: dict, email_text: str) -> str | None:
 
 # ---- applying the analysis --------------------------------------------------------
 def _summary(case: Case) -> dict:
-    return {"insurer": case.insurer_name, "request_number": case.claim_number, "stage": case.stage,
-            "status": case.status, "open_tasks": [t["title"] for t in case.open_tasks()],
-            "messages_so_far": [f"{c['direction']}: {c['subject']}" for c in case.correspondence[-6:]]}
+    """What the agents are told about the case. The request number and subjects go through
+    the identifier map like everything else an agent reads."""
+    r = case.redact_for_log
+    return {"insurer": case.insurer_name, "request_number": r(case.claim_number), "stage": case.stage,
+            "status": case.status, "open_tasks": [r(t["title"]) for t in case.open_tasks()],
+            "messages_so_far": [f"{c['direction']}: {r(c['subject'])}" for c in case.correspondence[-6:]]}
 
 
 def _email_text(case: Case, entry: dict) -> tuple[str, str]:
