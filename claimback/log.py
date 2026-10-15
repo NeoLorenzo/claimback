@@ -75,3 +75,8 @@ def emit(agent: str, kind: str, message: str, _path: Path | None = None, _consol
             target.parent.mkdir(parents=True, exist_ok=True)
             with target.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(record, default=str) + "\n")
+        for sink in _sinks:
+            try:
+                sink(record, target)
+            except Exception as e:  # a mirror must never break the run
+                print(f"[event sink failed: {type(e).__name__}: {e}]", file=sys.stderr)
