@@ -1,0 +1,63 @@
+"""Live event log: colored console lines for the demo, JSONL on disk for replay."""
+import json
+import sys
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+COLORS = {
+    "orchestrator": "\033[1;37m",
+    "planner": "\033[1;35m",
+    "intake": "\033[36m",
+    "policy_analyst": "\033[34m",
+    "evidence_researcher": "\033[32m",
+    "writer": "\033[33m",
+    "reviewer": "\033[31m",
+    "fact_checker": "\033[95m",
+    "packager": "\033[92m",
+}
+RESET = "\033[0m"
+DIM = "\033[2m"
+
+_lock = threading.Lock()
+_log_path: Path | None = None
+_t0 = time.monotonic()
+
+if sys.platform == "win32":
+    import os
+    os.system("")  # enable ANSI escape handling in Windows consoles
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+
+def set_log_file(path: Path) -> None:
+    global _log_path
+    _log_path = path
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def emit(agent: str, kind: str, message: str, **data) -> None:
+    """kind: start | done | info | handoff | retry | error | loop | warn"""
+    elapsed = time.monotonic() - _t0
+    color = COLORS.get(agent, "")
+    marker = {
+        "start": "▶", "done": "✓", "handoff": "→", "retry": "↻",
+        "error": "✗", "loop": "⟲", "warn": "!", "info": "·",
+    }.get(kind, "·")
+    line = f"{DIM}{elapsed:6.1f}s{RESET} {color}{agent:>19}{RESET} {marker} {message}"
+    record = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "elapsed": round(elapsed, 2),
+        "agent": agent,
+        "kind": kind,
+        "message": message,
+        **({"data": data} if data else {}),
+    }
+    with _lock:
+        print(line, flush=True)
+        if _log_path:
+            with _log_path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(record, default=str) + "\n")

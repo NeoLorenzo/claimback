@@ -60,10 +60,37 @@ Denial letter + plan docs + notes
 
 ## Responsible design
 
-- **Privacy:** PHI is redacted at intake, and downstream agents see placeholders. Data is processed locally and not stored after the run.
+- **Privacy:** PHI is redacted at intake, and downstream agents see placeholders. A leak check blocks the run if any identifier survives redaction. The identifier map stays on local disk (`runs/<id>/phi_map.json`), and only the Packager uses it, with no model call. Web search sees a de-identified clinical summary only. `python -m claimback purge <run_id>` deletes a run.
 - **No fabrication:** the fact checker blocks any statement that isn't grounded in an uploaded document or a cited source.
 - **Not medical or legal advice:** the packet is a draft that a human reviews and signs. ClaimBack never submits anything on its own.
 - **Misuse:** ClaimBack only drafts appeals for documents the user provides. It refuses to invent diagnoses or treatments or to alter records.
+
+## Running it
+
+```bash
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY=...            # PowerShell: $env:ANTHROPIC_API_KEY="..."
+
+python -m claimback run cases/cgm-denial                      # full run with live agent log
+python -m claimback run cases/cgm-denial --chaos              # inject failures to show recovery
+python -m claimback run cases/cgm-denial --stop-after policy  # simulate a crash...
+python -m claimback resume <run_id>                           # ...and resume from the checkpoint
+python -m claimback run cases/cgm-denial --mock               # no API calls (tests the orchestration)
+```
+
+Output: `runs/<run_id>/output/appeal_packet.html` (printable) and `.md`, plus `events.jsonl` (the full agent log) and `state.json` (the checkpoints).
+
+### How the pieces map to code
+
+| Piece | File |
+|---|---|
+| Orchestrator: stage runner, retries, parallelism, review loop | `claimback/orchestrator.py` |
+| Run state and checkpoints (atomic writes, resume) | `claimback/state.py` |
+| Agents and prompts | `claimback/agents.py` |
+| Typed handoff artifacts | `claimback/schemas.py` |
+| Claude calls (structured outputs, web search, refusal fallback) | `claimback/llm.py` |
+| PHI redaction and leak check | `claimback/redact.py` |
+| Packet builder (local, no model) | `claimback/packager.py` |
 
 ## Status
 

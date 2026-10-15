@@ -1,0 +1,48 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL PATIENT AND FICTIONAL INSURER
+
+EVERGREEN MUTUAL HEALTH PLAN
+Utilization Management Department
+PO Box 4410, Portland, OR 97208
+Phone: 1-800-555-0142   Fax: 1-800-555-0199
+
+September 22, 2026
+
+Rosa Delgado
+1427 Alder Creek Lane
+Salem, OR 97301
+
+Member ID: EVM-88231407
+Date of Birth: 03/14/1961
+Group Number: OR-SMB-20914
+Claim / Request Number: UM-2026-0918-55731
+Requesting Provider: Dr. Anil Mehta, MD (Endocrinology), Willamette Valley Endocrine Associates
+Service Requested: Continuous Glucose Monitor (CGM) system and sensors, HCPCS E2103 / A4239
+Date of Request: September 18, 2026
+
+NOTICE OF ADVERSE BENEFIT DETERMINATION
+
+Dear Rosa Delgado,
+
+We have reviewed the request for the service listed above. After review, we have DENIED coverage for this service.
+
+Reason for denial:
+The requested Continuous Glucose Monitor is not medically necessary for this member. Per Evergreen Mutual Medical Policy MP-DME-031 (Continuous Glucose Monitoring), coverage requires that the member be treated with intensive insulin therapy consisting of three (3) or more daily injections of insulin or use of an insulin pump. The submitted records indicate the member uses a once-daily long-acting insulin only. Therefore the coverage criteria are not met.
+
+Denial reason code: MN-04 (Does not meet medical necessity criteria)
+Reviewed by: Plan Medical Director (Internal Medicine)
+
+YOUR RIGHT TO APPEAL
+You have the right to request an internal appeal of this decision. Your appeal must be received within 180 calendar days of the date of this notice. You may submit written comments, documents, records, and other information relating to your claim. You may request, free of charge, copies of all documents and the clinical criteria used in making this decision.
+
+If your treating provider believes that waiting for a standard appeal could seriously jeopardize your life, health, or ability to regain maximum function, you may request an expedited appeal, which will be decided within 72 hours.
+
+If your internal appeal is denied, you may have the right to an independent external review.
+
+Send written appeals to:
+Evergreen Mutual Health Plan - Appeals and Grievances
+PO Box 4415, Portland, OR 97208
+Fax: 1-800-555-0177
+
+Sincerely,
+Utilization Management Department
+Evergreen Mutual Health Plan

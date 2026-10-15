@@ -1,0 +1,70 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL INSURER POLICY
+
+EVERGREEN MUTUAL HEALTH PLAN
+MEDICAL POLICY MP-DME-031: CONTINUOUS GLUCOSE MONITORING (CGM)
+
+Original effective date: 07/01/2019
+Last revised: 01/01/2026
+Revision history:
+  01/01/2026 - Criteria I.B revised to align with updated national coverage
+               criteria and professional society guidelines. Requirement for
+               three or more daily insulin injections REMOVED. Coverage now
+               extends to members using any insulin, or members with a
+               documented history of problematic hypoglycemia.
+  07/01/2023 - Annual review, no criteria changes.
+  07/01/2019 - Policy created.
+
+I. COVERAGE CRITERIA - PERSONAL (THERAPEUTIC) CGM
+
+A therapeutic continuous glucose monitor and related supplies are considered
+MEDICALLY NECESSARY when ALL of the following criteria are met:
+
+  A. The member has a diagnosis of diabetes mellitus (type 1, type 2, or other);
+     AND
+  B. The member meets at least ONE of the following:
+       1. The member is insulin-treated (any insulin regimen, including a single
+          daily dose of basal/long-acting insulin); OR
+       2. The member has a documented history of problematic hypoglycemia,
+          defined as either:
+            a. recurrent level 2 hypoglycemic events (glucose < 54 mg/dL) that
+               persist despite multiple attempts to adjust medication or modify
+               the treatment plan; OR
+            b. a history of at least one level 3 hypoglycemic event
+               (altered mental or physical state requiring third-party
+               assistance);
+     AND
+  C. The CGM is prescribed in accordance with its FDA indications for use;
+     AND
+  D. The member or caregiver has been trained or will be trained to use the
+     device, as documented by the prescribing practitioner; AND
+  E. Within six (6) months prior to ordering the CGM, the treating practitioner
+     has had an in-person or telehealth visit with the member to evaluate their
+     diabetes control and determined that criteria A through D are met.
+
+II. CONTINUED COVERAGE
+Every six (6) months following the initial order, the treating practitioner
+must have a visit documenting adherence to the CGM regimen and diabetes
+treatment plan.
+
+III. NOT MEDICALLY NECESSARY
+CGM is not medically necessary when the criteria in Section I are not met.
+
+---
+
+EVIDENCE OF COVERAGE (EXCERPT) - SECTION 9: APPEALS
+
+9.1 Internal appeals. A member, or a provider or authorized representative
+acting on the member's behalf, may file an internal appeal within 180 calendar
+days of receiving an adverse benefit determination. Standard pre-service
+appeals are decided within 30 calendar days of receipt.
+
+9.2 Expedited appeals. Where the standard timeframe could seriously jeopardize
+the member's life, health, or ability to regain maximum function, an expedited
+appeal will be decided within 72 hours.
+
+9.3 Authorized representatives. A member may designate an authorized
+representative in writing using the Plan's Appointment of Representative form.
+
+9.4 External review. If the Plan upholds its denial on internal appeal, the
+member may request independent external review through the state insurance
+regulator within four (4) months of the final internal adverse determination.
