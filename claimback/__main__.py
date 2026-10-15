@@ -7,6 +7,11 @@
   python -m claimback purge <run_id>                  # delete a run and its identifier map
   python -m claimback serve                           # live agent timeline + replay at http://127.0.0.1:8765
   python -m claimback export-site <run_id> [...]      # static replay site in docs/ (GitHub Pages)
+  python -m claimback open-case <run_id>              # open a long-lived case from a finished run
+  python -m claimback watch                           # case worker: watch the mailbox, move cases forward
+  python -m claimback simulate-insurer <case> <scene> # scripted insurer email (ack, evidence-request, overturned, upheld)
+  python -m claimback cases                           # list cases
+  (add --fake to any case command to use the local fake mailbox instead of Gmail)
 """
 import argparse
 import os
@@ -36,7 +41,42 @@ def main() -> int:
     x = sub.add_parser("export-site", help="export finished synthetic runs as a static replay site")
     x.add_argument("run_ids", nargs="+")
     x.add_argument("--out", type=Path, default=Path(__file__).resolve().parent.parent / "docs")
+    oc = sub.add_parser("open-case", help="open a case from a finished run")
+    oc.add_argument("run_id")
+    oc.add_argument("--insurer-email", help="insurer address for this case (the send allow-list)")
+    w = sub.add_parser("watch", help="case worker: watch the mailbox and move cases forward")
+    w.add_argument("--interval", type=int, default=20)
+    w.add_argument("--once", action="store_true", help="check once and exit")
+    si = sub.add_parser("simulate-insurer", help="send a scripted, clearly simulated insurer email")
+    si.add_argument("case_id")
+    si.add_argument("scene", choices=["ack", "evidence-request", "overturned", "upheld"])
+    sub.add_parser("cases", help="list cases")
+    for sp in (oc, w, si):
+        sp.add_argument("--fake", action="store_true", help="use the local fake mailbox")
     args = p.parse_args()
+
+    if getattr(args, "fake", False):
+        os.environ["CLAIMBACK_FAKE_MAIL"] = "1"
+    if args.cmd in ("open-case", "watch", "simulate-insurer", "cases"):
+        from . import llm  # noqa: F401  loads .env (mail credentials)
+        from .cases import all_cases, open_case
+        if args.cmd == "open-case":
+            case = open_case(args.run_id, args.insurer_email)
+            print(f"opened case {case.case_id} · replies to {case.reply_address} · insurer {case.insurer_addresses[0]}")
+        elif args.cmd == "watch":
+            from .worker import watch
+            try:
+                watch(args.interval, args.once)
+            except KeyboardInterrupt:
+                print("\n[case worker stopped; all case progress is saved]")
+        elif args.cmd == "simulate-insurer":
+            from .insurer_sim import send_scene
+            send_scene(args.case_id, args.scene)
+        else:
+            for c in all_cases():
+                waiting = [t["title"] for t in c.open_tasks("user")]
+                print(f"{c.case_id:28} {c.status:17} {len(c.correspondence)} msg  {waiting[0] if waiting else ''}")
+        return 0
 
     if args.cmd == "export-site":
         from .export import ExportRefused, export_site

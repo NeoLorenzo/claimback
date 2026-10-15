@@ -16,6 +16,10 @@ COLORS = {
     "reviewer": "\033[31m",
     "fact_checker": "\033[95m",
     "packager": "\033[92m",
+    "case_worker": "\033[1;36m",
+    "connector": "\033[96m",
+    "insurer_sim": "\033[90m",
+    "correspondence": "\033[94m",
 }
 RESET = "\033[0m"
 DIM = "\033[2m"
@@ -39,8 +43,9 @@ def set_log_file(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def emit(agent: str, kind: str, message: str, **data) -> None:
-    """kind: start | done | info | handoff | retry | error | loop | warn"""
+def emit(agent: str, kind: str, message: str, _path: Path | None = None, **data) -> None:
+    """kind: start | done | info | handoff | retry | error | loop | warn.
+    _path overrides the run log, e.g. to write to one case's timeline."""
     elapsed = time.monotonic() - _t0
     color = COLORS.get(agent, "")
     marker = {
@@ -58,6 +63,8 @@ def emit(agent: str, kind: str, message: str, **data) -> None:
     }
     with _lock:
         print(line, flush=True)
-        if _log_path:
-            with _log_path.open("a", encoding="utf-8") as f:
+        target = _path or _log_path
+        if target:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open("a", encoding="utf-8") as f:
                 f.write(json.dumps(record, default=str) + "\n")

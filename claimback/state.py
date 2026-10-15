@@ -15,6 +15,21 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def atomic_write_json(path: Path, data) -> None:
+    """Write via a temp file and swap it in, so readers never see a half-written file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+    for attempt in range(20):  # Windows refuses the swap while a reader (e.g. the web view) has the file open
+        try:
+            os.replace(tmp, path)  # atomic on the same volume
+            return
+        except PermissionError:
+            if attempt == 19:
+                raise
+            time.sleep(0.05)
+
+
 @dataclass
 class Stage:
     status: str = "pending"  # pending | running | done | failed
@@ -44,18 +59,7 @@ class RunState:
     # ---- persistence -------------------------------------------------
     def save(self) -> None:
         with self._lock:
-            self.dir.mkdir(parents=True, exist_ok=True)
-            tmp = self.dir / "state.json.tmp"
-            data = asdict(self)
-            tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-            for attempt in range(20):  # Windows refuses the swap while a reader (e.g. the web view) has the file open
-                try:
-                    os.replace(tmp, self.dir / "state.json")  # atomic on the same volume
-                    break
-                except PermissionError:
-                    if attempt == 19:
-                        raise
-                    time.sleep(0.05)
+            atomic_write_json(self.dir / "state.json", asdict(self))
 
     @classmethod
     def load(cls, run_id: str) -> "RunState":
