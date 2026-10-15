@@ -252,6 +252,38 @@ def fact_check(docs, evidence, draft: dict, feedback=None) -> dict:
     return out.model_dump()
 
 
+# ---- Follow-up writer (case worker) ------------------------------------------------
+def write_followup(case_summary: dict, docs: dict[str, str], previous: dict | None,
+                   factcheck: dict | None, feedback=None) -> dict:
+    system = TEAM_CONTEXT + (
+        "You are the Writer, now replying on an open appeal case. The insurer "
+        "(document REQUEST) asked for more information, and the member has supplied "
+        "it (documents UPLOAD-1, UPLOAD-2, ...). ORIGINAL_APPEAL is the appeal already "
+        "sent. Write a short cover letter (under about 400 words, markdown) from the "
+        "member to the insurer's appeals department that: references the appeal and "
+        "request numbers; lists each enclosed document against the item it answers; "
+        "summarizes in a sentence or two what each document shows that matters for "
+        "the plan's criteria; asks the insurer to complete its review and send a "
+        "written decision. Don't repeat the whole appeal and don't add arguments the "
+        "documents don't support.\n\n"
+        "Every factual statement must appear in `claims` with the source_ids that "
+        "support it (REQUEST, ORIGINAL_APPEAL, UPLOAD-n). Leave the signature lines "
+        "with placeholders. List the enclosures by their document names."
+    )
+    parts = [docs_block(docs), "Case: " + as_json(case_summary)]
+    if previous:
+        parts.append("Your previous draft:\n" + previous["letter_markdown"])
+    if factcheck:
+        bad = [c for c in factcheck["checks"] if not c["supported"]]
+        lines = [f"- {c['claim_id']}: {c['explanation']}" for c in bad]
+        lines += [f"- untracked statement: {u}" for u in factcheck["untracked_claims"]]
+        if lines:
+            parts.append("The fact checker could not verify these statements. Remove them, or correct "
+                         "them so the sources support them:\n" + "\n".join(lines))
+    out = llm.call("writer", system, "\n\n".join(parts) + retry_note(feedback), AppealDraft, effort="medium")
+    return out.model_dump()
+
+
 # ---- Correspondence agent (case worker) -------------------------------------------
 def analyze_correspondence(case_summary: dict, subject: str, body: str, feedback=None) -> dict:
     system = TEAM_CONTEXT + (
@@ -267,6 +299,9 @@ def analyze_correspondence(case_summary: dict, subject: str, body: str, feedback
         "- Only give a date when the email states it explicitly, and use that date's "
         "sentence as the quote. If the email gives only a relative deadline (for "
         "example 'within 14 days'), leave due_date null and keep the wording in the item.\n"
+        "- deadlines are only dates by which someone must act (send something, "
+        "request a review). Validity periods, effective dates and dates of past "
+        "events belong in new_facts, not deadlines.\n"
         "- An acknowledgment or receipt confirmation is never a decision. Only set "
         "decision when the email clearly states the appeal's outcome.\n"
         "- If the meaning is uncertain, classify it as 'unclear' and propose human_review."

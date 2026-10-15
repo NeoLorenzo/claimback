@@ -1,0 +1,20 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL PATIENT
+
+GLUCOSE METER DOWNLOAD - LOW READINGS REPORT
+Patient: Rosa Delgado     DOB: 03/14/1961
+Meter: home blood glucose meter (fingerstick)
+Report period: 06/01/2026 - 09/09/2026
+Downloaded at: Willamette Valley Endocrine Associates, 09/10/2026
+
+Readings below 70 mg/dL
+Date         Time      Glucose (mg/dL)   Note
+07/02/2026   03:10     48                symptomatic, treated with juice
+07/02/2026   03:35     86                recheck after treatment
+08/19/2026   02:45     51                symptomatic, treated with glucose tablets
+08/19/2026   03:10     92                recheck after treatment
+
+Summary
+Readings in period: 312 (average 3.4 per day)
+Readings below 54 mg/dL (level 2): 2
+Readings 54-69 mg/dL (level 1): 0
+Average glucose: 214 mg/dL

@@ -1,3 +1,4 @@
 anthropic>=1.14
 pydantic>=2
 markdown>=3.5
+pypdf>=4

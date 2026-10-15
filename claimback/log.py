@@ -43,7 +43,8 @@ def set_log_file(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def emit(agent: str, kind: str, message: str, _path: Path | None = None, **data) -> None:
+def emit(agent: str, kind: str, message: str, _path: Path | None = None, _console_prefix: str = "",
+         **data) -> None:
     """kind: start | done | info | handoff | retry | error | loop | warn.
     _path overrides the run log, e.g. to write to one case's timeline."""
     elapsed = time.monotonic() - _t0
@@ -52,7 +53,7 @@ def emit(agent: str, kind: str, message: str, _path: Path | None = None, **data)
         "start": "▶", "done": "✓", "handoff": "→", "retry": "↻",
         "error": "✗", "loop": "⟲", "warn": "!", "info": "·",
     }.get(kind, "·")
-    line = f"{DIM}{elapsed:6.1f}s{RESET} {color}{agent:>19}{RESET} {marker} {message}"
+    line = f"{DIM}{elapsed:6.1f}s{RESET} {color}{agent:>19}{RESET} {marker} {_console_prefix}{message}"
     record = {
         "ts": datetime.now(timezone.utc).isoformat(),
         "elapsed": round(elapsed, 2),

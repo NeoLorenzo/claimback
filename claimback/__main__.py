@@ -11,6 +11,9 @@
   python -m claimback watch                           # case worker: watch the mailbox, move cases forward
   python -m claimback simulate-insurer <case> <scene> # scripted insurer email (ack, evidence-request, overturned, upheld)
   python -m claimback cases                           # list cases
+  python -m claimback upload <case> <task> <file>     # supply a document the insurer asked for
+  python -m claimback approve <case> <outbox_id>      # Approve & send a reviewed draft
+  python -m claimback confirm <case> <task>           # confirm the insurer's decision and close the case
   (add --fake to any case command to use the local fake mailbox instead of Gmail)
 """
 import argparse
@@ -51,15 +54,36 @@ def main() -> int:
     si.add_argument("case_id")
     si.add_argument("scene", choices=["ack", "evidence-request", "overturned", "upheld"])
     sub.add_parser("cases", help="list cases")
-    for sp in (oc, w, si):
+    up = sub.add_parser("upload", help="supply a document the insurer asked for")
+    up.add_argument("case_id"); up.add_argument("task_id"); up.add_argument("file", type=Path)
+    ap = sub.add_parser("approve", help="Approve & send a reviewed draft")
+    ap.add_argument("case_id"); ap.add_argument("outbox_id")
+    cf = sub.add_parser("confirm", help="confirm the insurer's decision and close the case")
+    cf.add_argument("case_id"); cf.add_argument("task_id")
+    for sp in (oc, w, si, ap):
         sp.add_argument("--fake", action="store_true", help="use the local fake mailbox")
     args = p.parse_args()
 
     if getattr(args, "fake", False):
         os.environ["CLAIMBACK_FAKE_MAIL"] = "1"
-    if args.cmd in ("open-case", "watch", "simulate-insurer", "cases"):
+    if args.cmd in ("open-case", "watch", "simulate-insurer", "cases", "upload", "approve", "confirm"):
         from . import llm  # noqa: F401  loads .env (mail credentials)
-        from .cases import all_cases, open_case
+        from .cases import ActionRefused, add_upload, all_cases, approve_outbox, confirm_outcome, open_case
+        try:
+            if args.cmd == "upload":
+                u = add_upload(args.case_id, args.task_id, args.file.name, args.file.read_bytes())
+                print(f"uploaded {u['id']} for {args.task_id}")
+                return 0
+            if args.cmd == "approve":
+                print(f"sent: {approve_outbox(args.case_id, args.outbox_id)}")
+                return 0
+            if args.cmd == "confirm":
+                confirm_outcome(args.case_id, args.task_id)
+                print(f"case {args.case_id} closed")
+                return 0
+        except ActionRefused as e:
+            print(f"refused: {e}")
+            return 1
         if args.cmd == "open-case":
             case = open_case(args.run_id, args.insurer_email)
             print(f"opened case {case.case_id} · replies to {case.reply_address} · insurer {case.insurer_addresses[0]}")

@@ -6,6 +6,7 @@ import time
 
 from .cases import Case, all_cases, case_id_from_addresses, mailbox_address
 from .correspondence import process_pending
+from .followup import process_followups
 from .connectors import InboundEmail, get_connector
 from .log import emit
 
@@ -65,12 +66,16 @@ def check_mailbox(connector) -> int:
 
 
 def advance_cases() -> int:
-    """Read every received-but-unprocessed message on every open case."""
+    """Read unprocessed messages and draft pending replies on every open case."""
     n = 0
     for case in all_cases():
-        if case.status != "closed" and any(c["direction"] == "in" and c["status"] == "received"
-                                           for c in case.correspondence):
+        if case.status == "closed":
+            continue
+        if any(c["direction"] == "in" and c["status"] == "received" for c in case.correspondence):
             n += process_pending(case)
+            case = Case.load(case.case_id)
+        if case.pending_followups:
+            n += process_followups(case)
     return n
 
 

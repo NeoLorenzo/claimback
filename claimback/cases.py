@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import redact
-from .log import emit as _emit
+from .log import DIM, RESET, emit as _emit
 from .state import RUNS_DIR, RunState, atomic_write_json
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,6 +61,8 @@ class Case:
     deadlines: list[dict] = field(default_factory=list)
     processed_message_ids: list[str] = field(default_factory=list)
     outcome: dict | None = None
+    uploads: list[dict] = field(default_factory=list)
+    pending_followups: list[str] = field(default_factory=list)  # insurer messages whose evidence is complete, reply not drafted yet
 
     _lock = threading.RLock()
 
@@ -88,7 +90,9 @@ class Case:
 
     # ---- timeline -----------------------------------------------------------
     def emit(self, agent: str, kind: str, message: str, **data) -> None:
-        _emit(agent, kind, message, _path=self.events_path, case=self.case_id, **data)
+        # The console shows which case each line belongs to; the timeline file is already per case
+        _emit(agent, kind, message, _path=self.events_path, _console_prefix=f"{DIM}[{self.case_id}]{RESET} ",
+              case=self.case_id, **data)
 
     def set_status(self, status: str, why: str) -> None:
         assert status in STATUSES, status
@@ -171,3 +175,111 @@ def open_case(run_id: str, insurer_email: str | None = None) -> Case:
     case.set_status("awaiting_human", "the first letter needs your approval")
     case.save()
     return case
+
+
+# ---- human actions (called from the web view and the CLI) ----------------------
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+ALLOWED_UPLOADS = {".pdf", ".txt", ".md"}
+
+
+class ActionRefused(Exception):
+    """A human action that ClaimBack won't perform (wrong state, recipient not allowed, ...)."""
+
+
+def add_upload(case_id: str, task_id: str, filename: str, data: bytes) -> dict:
+    """Attach a document the insurer asked for. When every item from that request
+    is in, the case worker drafts the reply."""
+    case = Case.load(case_id)
+    task = next((t for t in case.tasks if t["id"] == task_id), None)
+    if not task or task["kind"] != "upload_evidence" or task["status"] != "open":
+        raise ActionRefused(f"{task_id} is not an open evidence task on {case_id}")
+    suffix = Path(filename).suffix.lower()
+    if suffix not in ALLOWED_UPLOADS:
+        raise ActionRefused(f"{suffix or 'this file type'} isn't accepted; upload a PDF or text file")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise ActionRefused("file is larger than 10 MB")
+    safe = "".join(ch for ch in Path(filename).name if ch.isalnum() or ch in "._-")[:80] or f"upload{suffix}"
+    uid = f"U{len(case.uploads) + 1}"
+    (case.dir / "uploads").mkdir(parents=True, exist_ok=True)
+    (case.dir / "uploads" / f"{uid}_{safe}").write_bytes(data)
+    upload = {"id": uid, "task": task_id, "file": f"uploads/{uid}_{safe}", "name": safe,
+              "bytes": len(data), "correspondence": task.get("correspondence"), "created": _now()}
+    case.uploads.append(upload)
+    case.emit("case_worker", "info", f"upload {uid} for {task_id}: {safe} ({len(data) // 1024 or 1} KB)", upload=uid)
+    case.complete_task(task_id, f"provided as {uid}")
+    source = task.get("correspondence")
+    still_open = [t for t in case.open_tasks() if t["kind"] == "upload_evidence" and t.get("correspondence") == source]
+    if not still_open and source and source not in case.pending_followups:
+        case.pending_followups.append(source)
+        case.set_status("action_required", f"everything requested in {source} is in; drafting the reply")
+    case.save()
+    return upload
+
+
+def approve_outbox(case_id: str, outbox_id: str) -> str:
+    """Send one reviewed draft. The human's click is the approval; the recipient
+    must be on the case's insurer allow-list. Returns the sent Message-ID."""
+    import email.utils
+
+    from .connectors import OutboundEmail, get_connector
+    case = Case.load(case_id)
+    item = next((o for o in case.outbox if o["id"] == outbox_id), None)
+    if not item:
+        raise ActionRefused(f"no draft {outbox_id} on {case_id}")
+    if item["status"] == "sending":
+        raise ActionRefused(f"{outbox_id} may already have been sent (interrupted mid-send); check the Sent folder")
+    if item["status"] != "awaiting_approval":
+        raise ActionRefused(f"{outbox_id} is {item['status']}, not awaiting approval")
+    if item["to"].lower() not in case.insurer_addresses:
+        case.emit("case_worker", "error", f"refused to send {outbox_id}: {item['to']} is not on this case's "
+                                           "insurer list", outbox=outbox_id)
+        raise ActionRefused(f"{item['to']} is not an allowed recipient for this case")
+
+    body = (case.dir / item["body_file"]).read_text(encoding="utf-8")
+    attachments = []
+    for uid in item.get("attachments", []):
+        up = next(u for u in case.uploads if u["id"] == uid)
+        mime = "application/pdf" if up["name"].lower().endswith(".pdf") else "text/plain"
+        attachments.append((up["name"], (case.dir / up["file"]).read_bytes(), mime))
+    # Record the Message-ID before sending, so an interrupted send can't silently go out twice
+    item["message_id"] = email.utils.make_msgid(domain="claimback.local")
+    item["status"] = "sending"
+    case.save()
+    connector = get_connector()
+    sent_id = connector.send(OutboundEmail(
+        from_addr=f"ClaimBack appeal <{mailbox_address()}>", to=item["to"], subject=item["subject"], body=body,
+        reply_to=case.reply_address, in_reply_to=item.get("in_reply_to"), attachments=attachments,
+        message_id=item["message_id"]))
+    item["status"], item["sent"] = "sent", _now()
+    case.correspondence.append({"id": f"S{sum(c['direction'] == 'out' for c in case.correspondence) + 1}",
+                                "direction": "out", "message_id": sent_id, "from": mailbox_address(),
+                                "to": item["to"], "subject": item["subject"], "date": item["sent"],
+                                "simulated": False, "trusted_sender": True, "outbox": outbox_id,
+                                "attachments": item.get("attachments", []), "status": "sent"})
+    case.emit("connector", "done", f"sent {outbox_id} to {item['to']} via {connector.name} "
+                                   f"(approved by you) · replies come back to {case.reply_address}",
+              outbox=outbox_id, direction="out")
+    for t in case.open_tasks():
+        if t["kind"] == "approve_send" and t.get("outbox_id") == outbox_id:
+            case.complete_task(t["id"], "approved and sent")
+    if not case.open_tasks("user"):
+        case.set_status("awaiting_insurer", f"{outbox_id} sent; waiting for the insurer")
+    case.save()
+    return sent_id
+
+
+def confirm_outcome(case_id: str, task_id: str) -> None:
+    """A human confirms the insurer's decision; only then does the case close."""
+    case = Case.load(case_id)
+    task = next((t for t in case.tasks if t["id"] == task_id), None)
+    if not task or task["kind"] != "confirm_outcome" or task["status"] != "open":
+        raise ActionRefused(f"{task_id} is not an open confirm-outcome task on {case_id}")
+    source = next((c for c in case.correspondence if c["id"] == task.get("correspondence")), {})
+    decision = (source.get("analysis") or {}).get("decision") or {}
+    case.outcome = {"result": decision.get("outcome", "confirmed"), "quote": decision.get("quote", task.get("quote")),
+                    "source": task.get("correspondence"), "confirmed_by": "user", "confirmed": _now()}
+    case.complete_task(task_id, "outcome confirmed by you")
+    case.set_status("closed", f"outcome confirmed: {case.outcome['result']}")
+    case.emit("case_worker", "done", f"case closed · outcome: {case.outcome['result']} (confirmed by you)",
+              outcome=case.outcome["result"])
+    case.save()

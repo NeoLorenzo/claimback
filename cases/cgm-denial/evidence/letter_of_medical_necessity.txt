@@ -1,0 +1,37 @@
+SYNTHETIC TEST DOCUMENT - FICTIONAL PATIENT AND PROVIDER
+
+WILLAMETTE VALLEY ENDOCRINE ASSOCIATES
+Letter of Medical Necessity
+
+Date: October 20, 2026
+To: Evergreen Mutual Health Plan - Appeals and Grievances
+Re: Rosa Delgado, DOB 03/14/1961, Member ID EVM-88231407
+Request number: UM-2026-0918-55731
+Service: Therapeutic continuous glucose monitor system and sensors (E2103 / A4239)
+
+I am the treating endocrinologist for Rosa Delgado, whom I have followed for type 2
+diabetes mellitus. I am writing to document the medical necessity of a therapeutic
+continuous glucose monitor (CGM).
+
+Ms. Delgado is insulin-treated. She has used insulin glargine since 2024 and currently
+takes 32 units subcutaneously each night. Her hemoglobin A1c was 9.1% on 09/10/2026,
+up from 8.7% in March 2026.
+
+She has had two documented symptomatic nocturnal hypoglycemic episodes below 54 mg/dL:
+48 mg/dL on 07/02/2026 and 51 mg/dL on 08/19/2026. I reduced her glargine dose from 36
+to 32 units after the first episode; the second episode occurred despite that
+reduction. She lives alone, and peripheral neuropathy has reduced the sensation in her
+fingertips, which makes frequent fingerstick testing difficult and unreliable for
+detecting overnight lows.
+
+At her 09/10/2026 visit I evaluated her diabetes control and determined that she meets
+Evergreen Mutual Medical Policy MP-DME-031 criteria I.A through I.D: she has diabetes
+mellitus, she is insulin-treated, the CGM is prescribed in accordance with its FDA
+indications, and she was trained on the device by our diabetes educator that day.
+
+A CGM will let us detect nocturnal hypoglycemia and safely titrate her basal insulin to
+improve glycemic control. In my clinical judgment it is medically necessary.
+
+Sincerely,
+Anil Mehta, MD
+Endocrinology, Willamette Valley Endocrine Associates
