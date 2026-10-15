@@ -3,6 +3,7 @@ import json
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,6 +29,7 @@ _lock = threading.Lock()
 _log_path: Path | None = None
 _t0 = time.monotonic()
 _sinks: list = []  # extra destinations for events, e.g. the hosted app's database (claimback/cloud)
+_ctx = threading.local()  # per-thread defaults: which log file, plus fields like the current stage
 
 if sys.platform == "win32":
     import os
@@ -49,10 +51,30 @@ def add_sink(fn) -> None:
     _sinks.append(fn)
 
 
+@contextmanager
+def context(path: Path | None = None, prefix: str | None = None, **data):
+    """Defaults for every emit in this thread: the log file (e.g. one case's timeline,
+    so model-usage lines land next to the agent that made the call), a console
+    prefix, and fields merged into each event's data (e.g. the current stage)."""
+    saved = (getattr(_ctx, "path", None), getattr(_ctx, "prefix", ""), getattr(_ctx, "data", {}))
+    _ctx.path = path or saved[0]
+    _ctx.prefix = saved[1] if prefix is None else prefix
+    _ctx.data = {**saved[2], **data}
+    try:
+        yield
+    finally:
+        _ctx.path, _ctx.prefix, _ctx.data = saved
+
+
 def emit(agent: str, kind: str, message: str, _path: Path | None = None, _console_prefix: str = "",
          **data) -> None:
     """kind: start | done | info | handoff | retry | error | loop | warn.
-    _path overrides the run log, e.g. to write to one case's timeline."""
+    _path overrides the run log, e.g. to write to one case's timeline.
+    data is the structured part of the event; it must never hold identifiers,
+    only placeholders, counts and de-identified facts."""
+    data = {**getattr(_ctx, "data", {}), **data}
+    _path = _path or getattr(_ctx, "path", None)
+    _console_prefix = _console_prefix or getattr(_ctx, "prefix", "")
     elapsed = time.monotonic() - _t0
     color = COLORS.get(agent, "")
     marker = {

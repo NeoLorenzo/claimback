@@ -10,8 +10,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import redact
-from .log import DIM, RESET, emit as _emit
+from . import redact, trace
+from .log import DIM, RESET, context as _log_context, emit as _emit
 from .state import RUNS_DIR, RunState, atomic_write_json
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -94,26 +94,48 @@ class Case:
         _emit(agent, kind, message, _path=self.events_path, _console_prefix=f"{DIM}[{self.case_id}]{RESET} ",
               case=self.case_id, **data)
 
+    def log_context(self, **data):
+        """Route every event in this block, including model-usage lines, to this case's timeline."""
+        return _log_context(path=self.events_path, prefix=f"{DIM}[{self.case_id}]{RESET} ", case=self.case_id, **data)
+
+    def identifier_map(self) -> dict:
+        path = self.dir / "phi_map.json"
+        if path.exists():
+            return json.loads(path.read_text(encoding="utf-8"))["redact"]
+        return RunState.load(self.run_id).read_private("phi_map.json")["redact"]
+
+    def redact_for_log(self, text: str) -> str:
+        """Subjects, file names and addresses go through the case's identifier map before
+        they are logged, so a name in a subject line or upload name never reaches the log."""
+        try:
+            return redact.apply(text or "", self.identifier_map())
+        except (OSError, ValueError, KeyError):
+            return "[not shown: identifier map unavailable]"
+
     def set_status(self, status: str, why: str) -> None:
         assert status in STATUSES, status
         if status != self.status:
             old, self.status = self.status, status
-            self.emit("case_worker", "info", f"status: {old} → {status} · {why}", status=status)
+            self.emit("case_worker", "info", f"status: {old} → {status} · {why}", status=status,
+                      type="status_change", from_status=old, to_status=status, why=why)
 
     # ---- tasks ----------------------------------------------------------------
     def add_task(self, kind: str, title: str, owner: str = "user", **details) -> dict:
         task = {"id": f"T{len(self.tasks) + 1}", "kind": kind, "title": title, "owner": owner,
                 "status": "open", "created": _now(), **details}
         self.tasks.append(task)
+        shown = {k: v for k, v in details.items() if k in ("due_date", "supplier", "correspondence", "outbox_id", "quote")}
         self.emit("case_worker", "warn" if owner == "user" else "info", f"task {task['id']} for {owner}: {title}",
-                  task=task["id"], owner=owner, waiting_for_user=owner == "user")
+                  task=task["id"], owner=owner, waiting_for_user=owner == "user", type="task_created",
+                  task_kind=kind, title=title, **shown)
         return task
 
     def complete_task(self, task_id: str, note: str = "") -> None:
         for t in self.tasks:
             if t["id"] == task_id and t["status"] == "open":
                 t["status"], t["completed"] = "done", _now()
-                self.emit("case_worker", "done", f"task {task_id} done{': ' + note if note else ''}", task=task_id)
+                self.emit("case_worker", "done", f"task {task_id} done{': ' + note if note else ''}", task=task_id,
+                          type="task_completed", task_kind=t["kind"], note=note, opened=t["created"])
 
     def complete_task_kind(self, kind: str, note: str = "") -> None:
         for t in self.tasks:
@@ -170,8 +192,16 @@ def open_case(run_id: str, insurer_email: str | None = None) -> Case:
                         "subject": f"Internal appeal: {case.claim_number}", "reviewer_notes": notes,
                         "body_file": "outbox/O1.md", "status": "awaiting_approval", "created": _now()})
     packet = RUNS_DIR / run_id / "output" / "appeal_packet.html"
-    case.emit("case_worker", "start", f"case opened from run {run_id} · replies go to {case.reply_address}",
-              run=run_id, packet=str(packet) if packet.exists() else None)
+    case.emit("case_worker", "start", f"case opened from run {run_id} · replies go to {case.reply_address} · "
+                                      f"Approve & send may only email {', '.join(case.insurer_addresses)}",
+              run=run_id, type="case_opened", reply_address=case.reply_address,
+              insurer_allow_list=case.insurer_addresses, insurer=case.insurer_name, appeal_stage=case.stage,
+              packet=f"runs/{run_id}/output/appeal_packet.html" if packet.exists() else None)
+    case.emit("case_worker", "info", f"outbox O1 queued: initial appeal from draft {rounds[-1]} "
+                                     f"({trace.words(body):,} words) · waits for a human to approve",
+              outbox="O1", type="outbox_queued", outbox_kind="initial_appeal", to=insurer.lower(),
+              subject=case.redact_for_log(case.outbox[0]["subject"]), words=trace.words(body),
+              writer_notes=len(notes), from_run_stage=f"draft_{rounds[-1]}")
     case.add_task("approve_send", "Review the appeal letter, then Approve & send it to the insurer",
                   outbox_id="O1")
     case.set_status("awaiting_human", "the first letter needs your approval")
@@ -207,11 +237,22 @@ def add_upload(case_id: str, task_id: str, filename: str, data: bytes) -> dict:
     upload = {"id": uid, "task": task_id, "file": f"uploads/{uid}_{safe}", "name": safe,
               "bytes": len(data), "correspondence": task.get("correspondence"), "created": _now()}
     case.uploads.append(upload)
-    case.emit("case_worker", "info", f"upload {uid} for {task_id}: {safe} ({len(data) // 1024 or 1} KB)", upload=uid)
+    shown = case.redact_for_log(safe)
+    case.emit("case_worker", "info", f"upload {uid} for {task_id}: {shown} ({len(data) // 1024 or 1} KB) · "
+                                     f"answers: {task['title'].removeprefix('Provide: ')}",
+              upload=uid, type="upload", task=task_id, name=shown, bytes=len(data), file_type=suffix,
+              answers=task["title"], correspondence=task.get("correspondence"), uploaded_by="user")
     case.complete_task(task_id, f"provided as {uid}")
     source = task.get("correspondence")
     still_open = [t for t in case.open_tasks() if t["kind"] == "upload_evidence" and t.get("correspondence") == source]
+    if still_open:
+        case.emit("case_worker", "info", f"{len(still_open)} item(s) from {source} still missing: "
+                                         + ", ".join(t["id"] for t in still_open), type="evidence_progress",
+                  correspondence=source, missing=[t["id"] for t in still_open])
     if not still_open and source and source not in case.pending_followups:
+        case.emit("case_worker", "handoff", f"writer: everything {source} asked for is in → draft the reply",
+                  to=["writer"], artifact="request + uploads", correspondence=source,
+                  uploads=[u["id"] for u in case.uploads if u.get("correspondence") == source])
         case.pending_followups.append(source)
         case.set_status("action_required", f"everything requested in {source} is in; drafting the reply")
     case.save()
@@ -234,13 +275,19 @@ def approve_outbox(case_id: str, outbox_id: str) -> str:
         raise ActionRefused(f"{outbox_id} is {item['status']}, not awaiting approval")
     if item["to"].lower() not in case.insurer_addresses:
         case.emit("case_worker", "error", f"refused to send {outbox_id}: {item['to']} is not on this case's "
-                                           "insurer list", outbox=outbox_id)
+                                           "insurer list", outbox=outbox_id, type="allow_list_check", result="failed",
+                  recipient=item["to"], allow_list=case.insurer_addresses)
         raise ActionRefused(f"{item['to']} is not an allowed recipient for this case")
+    case.emit("case_worker", "info", f"approval received for {outbox_id} · allow-list check passed: {item['to']} "
+                                     "is this case's insurer", outbox=outbox_id, type="allow_list_check",
+              result="passed", recipient=item["to"], allow_list=case.insurer_addresses, approved_by="user")
 
     from .letters import fill_send_time, to_html, to_plain, unresolved_blanks
     body = fill_send_time((case.dir / item["body_file"]).read_text(encoding="utf-8"))
     blanks = unresolved_blanks(body)
     if blanks:
+        case.emit("case_worker", "warn", f"{outbox_id} not sent: {len(blanks)} blank(s) still to fill",
+                  outbox=outbox_id, type="send_blocked", blanks=len(blanks))
         raise ActionRefused("fill in these blanks before sending (use Edit): " + "; ".join(blanks))
     attachments = []
     for uid in item.get("attachments", []):
@@ -263,9 +310,16 @@ def approve_outbox(case_id: str, outbox_id: str) -> str:
                                 "to": item["to"], "subject": item["subject"], "date": item["sent"],
                                 "simulated": False, "trusted_sender": True, "outbox": outbox_id,
                                 "attachments": item.get("attachments", []), "status": "sent"})
-    case.emit("connector", "done", f"sent {outbox_id} to {item['to']} via {connector.name} "
-                                   f"(approved by you) · replies come back to {case.reply_address}",
-              outbox=outbox_id, direction="out")
+    sid = case.correspondence[-1]["id"]
+    case.emit("connector", "done", f"email {sid} sent: {outbox_id} to {item['to']} via {connector.name} "
+                                   f"(approved by you) · “{case.redact_for_log(item['subject'])}”"
+                                   + (f" · {len(attachments)} attachment(s)" if attachments else "")
+                                   + f" · replies come back to {case.reply_address}",
+              outbox=outbox_id, direction="out", type="email_sent", correspondence=sid, to=item["to"],
+              subject=case.redact_for_log(item["subject"]), connector=connector.name,
+              real_email=connector.name != "fake", words=trace.words(body), approved_by="user",
+              attachments=[case.redact_for_log(a[0]) for a in attachments], threaded=bool(item.get("in_reply_to")),
+              simulated=False)
     for t in case.open_tasks():
         if t["kind"] == "approve_send" and t.get("outbox_id") == outbox_id:
             case.complete_task(t["id"], "approved and sent")
@@ -288,7 +342,8 @@ def update_outbox(case_id: str, outbox_id: str, body: str) -> dict:
     from .letters import unresolved_blanks
     left = unresolved_blanks(body)
     case.emit("case_worker", "info", f"draft {outbox_id} edited by you"
-              + (f" · {len(left)} blank(s) still to fill" if left else " · ready to send"), outbox=outbox_id)
+              + (f" · {len(left)} blank(s) still to fill" if left else " · ready to send"), outbox=outbox_id,
+              type="draft_edited", words=trace.words(body), blanks=len(left), edited_by="user")
     case.save()
     return {"blanks": left}
 
@@ -309,5 +364,14 @@ def confirm_outcome(case_id: str, task_id: str) -> None:
         case.emit("case_worker", "info", f"task {t['id']} withdrawn: the case has an outcome", task=t["id"])
     case.set_status("closed", f"outcome confirmed: {case.outcome['result']}")
     case.emit("case_worker", "done", f"case closed · outcome: {case.outcome['result']} (confirmed by you)",
-              outcome=case.outcome["result"])
+              outcome=case.outcome["result"], type="outcome_confirmed", quote=case.outcome["quote"],
+              source=case.outcome["source"], confirmed_by="user")
+    t = trace.totals(trace.read_events(case.events_path))
+    sent = sum(c["direction"] == "out" for c in case.correspondence)
+    received = len(case.correspondence) - sent
+    case.emit("case_worker", "info", f"case summary · {received} emails in, {sent} out · {len(case.tasks)} tasks · "
+                                     f"{len(case.uploads)} uploads · {t['model_calls']} model calls · "
+                                     f"est. ${t['cost_usd']:.2f}", type="case_summary", emails_in=received,
+              emails_out=sent, tasks=len(case.tasks), uploads=len(case.uploads), outcome=case.outcome["result"],
+              opened=case.created, closed=case.outcome["confirmed"], **t)
     case.save()

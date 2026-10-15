@@ -1,6 +1,7 @@
 """The case worker: a long-running loop that watches the ClaimBack mailbox and
 moves each case forward. All progress lives in case.json, so stopping and
 restarting it never loses or repeats work."""
+import email
 import os
 import time
 
@@ -39,13 +40,24 @@ def record_inbound(case: Case, m: InboundEmail) -> dict:
              "raw_file": f"inbox/{cid}.eml", "attachments": saved, "status": "received"}
     case.correspondence.append(entry)
     case.processed_message_ids.append(m.message_id)
-    who = "simulated insurer" if simulated else m.from_addr
-    case.emit("connector", "info", f"email {cid} received from {who}: “{m.subject}”"
-              + (f" · {len(saved)} attachment(s)" if saved else ""),
-              correspondence=cid, direction="in", simulated=simulated)
+    # Only allow-listed senders are logged by address; anyone else only by domain
+    sender = m.from_addr if entry["trusted_sender"] else f"someone at {m.from_addr.rpartition('@')[2] or 'unknown'}"
+    who = f"the simulated insurer ({sender})" if simulated else sender
+    subject = case.redact_for_log(m.subject)
+    reply_to = str(email.message_from_bytes(m.raw).get("In-Reply-To", "")).strip()
+    answers = next((c["id"] for c in case.correspondence if c["direction"] == "out" and c.get("message_id") == reply_to), None)
+    case.emit("connector", "info", f"email {cid} received from {who}: “{subject}”"
+              + (f" · replies to {answers}" if answers else "")
+              + (f" · {len(saved)} attachment(s)" if saved else "")
+              + (" · SIMULATED insurer message (test harness, not a real insurer)" if simulated else ""),
+              correspondence=cid, direction="in", type="email_received", simulated=simulated,
+              simulated_header=m.simulated, trusted_sender=entry["trusted_sender"], on_allow_list=on_list,
+              sender=sender, subject=subject, body_chars=len(m.text), attachments=len(saved), in_reply_to=answers,
+              stored="raw message kept in the local case folder only")
     if not entry["trusted_sender"]:
         case.emit("connector", "warn", f"{cid}: sender isn't on this case's insurer list; "
-                                       "treated as untrusted until a human confirms it")
+                                       "treated as untrusted until a human confirms it", correspondence=cid,
+                  type="untrusted_sender")
     case.save()
     return entry
 
@@ -59,7 +71,7 @@ def check_mailbox(connector) -> int:
             continue
         case = Case.load(case_id)
         if m.message_id in case.processed_message_ids:
-            continue  # already handled, including before a restart
+            continue  # already handled, including before a restart (deduplicated by Message-ID)
         record_inbound(case, m)
         new += 1
     return new

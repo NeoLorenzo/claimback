@@ -94,8 +94,14 @@ def main() -> int:
             except KeyboardInterrupt:
                 print("\n[case worker stopped; all case progress is saved]")
         elif args.cmd == "simulate-insurer":
+            from .cases import Case
             from .insurer_sim import send_scene
-            send_scene(args.case_id, args.scene)
+            case = Case.load(args.case_id)
+            with case.log_context():  # the simulator's own line goes on the case timeline too
+                case.emit("insurer_sim", "start", f"scripted insurer scene '{args.scene}' · SIMULATED: ClaimBack's test "
+                                                  "harness plays the insurer for this demo", type="simulated_scene",
+                          scene=args.scene, simulated=True)
+                send_scene(args.case_id, args.scene)
         else:
             for c in all_cases():
                 waiting = [t["title"] for t in c.open_tasks("user")]

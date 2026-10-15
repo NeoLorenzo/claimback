@@ -99,7 +99,8 @@ def _list_cases() -> list[dict]:
             except (OSError, ValueError):
                 continue  # mid-write on Windows; it shows up on the next refresh
             out.append({
-                "id": c["case_id"], "case_name": c.get("case_name"), "insurer_name": c.get("insurer_name"),
+                "id": c["case_id"], "run_id": c.get("run_id"), "case_name": c.get("case_name"),
+                "insurer_name": c.get("insurer_name"),
                 "claim_number": c.get("claim_number"), "status": c.get("status"), "stage": c.get("stage"),
                 "created": c.get("created", ""),
                 "waiting": sum(t["status"] == "open" and t.get("owner") == "user" for t in c.get("tasks", [])),
@@ -183,6 +184,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"status": _status(run_id), "events": _read_events(run_id)})
             if parts[3] == "stream":
                 return self._stream(run_id, int(query.get("from", ["0"])[0]))
+            if parts[3] == "case":  # the newest case opened from this run, for the timeline's second phase
+                case = next((c for c in _list_cases() if c["run_id"] == run_id), None)
+                if not case:
+                    return self._json({"case": None})
+                return self._json({"case": {"id": case["id"], "status": case["status"],
+                                            "events": _read_events("", path=CASEFILES_DIR / case["id"] / "events.jsonl")}})
             if parts[3] == "packet":
                 packet = RUNS_DIR / run_id / "output" / "appeal_packet.html"
                 if packet.exists():
