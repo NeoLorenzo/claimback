@@ -3,181 +3,344 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ClaimBack</title>
-<meta name="description" content="A team of Claude agents that turns a health-insurance denial into an appeal, then manages the case.">
+<title>ClaimBack: appeal a denied health insurance claim</title>
+<meta name="description" content="ClaimBack helps you appeal a denied health insurance claim. We read your denial, check your plan's rules and write the appeal letter. You decide what gets sent.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0b0e14; --panel: #121722; --panel-2: #171d2a; --line: #232b3a;
-  --text: #e6e9ef; --muted: #8b95a7; --dim: #5c6679;
-  --ok: #34d399; --warn: #fbbf24; --err: #f87171; --loop: #c084fc; --accent: #60a5fa;
-  --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  --bg: #f6f4ef; --surface: #ffffff; --surface-2: #faf9f6; --line: #dcd8cf; --line-strong: #b9b3a6;
+  --text: #1c2430; --muted: #4b5563; --faint: #6b7280;
+  --brand: #1d5fa8; --brand-dark: #154a85; --brand-soft: #e8f0fa;
+  --good: #1e7a46; --good-soft: #e6f4ea; --attn: #8a4b00; --attn-soft: #fff3df; --attn-line: #f0c783;
+  --bad: #b42318; --bad-soft: #fdecea; --wait: #3d5a80; --wait-soft: #edf2f8;
+  --radius: 14px; --shadow: 0 1px 2px rgba(28, 36, 48, .06), 0 4px 14px rgba(28, 36, 48, .06);
+  --font: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text);
-  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-a { color: var(--accent); }
-button, select, input { font: inherit; color: var(--text); background: var(--panel-2);
-  border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; }
-button { cursor: pointer; }
-button:hover:not(:disabled) { border-color: #3a4558; }
-button:disabled { opacity: .45; cursor: default; }
-button.primary { background: #1d4ed8; border-color: #2563eb; }
-button.go { background: #065f46; border-color: #059669; }
-button.link { background: none; border: none; color: var(--accent); padding: 0; }
-button.small { padding: 4px 9px; font-size: 13px; }
-input { width: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.6 var(--font); }
+a { color: var(--brand); text-underline-offset: 3px; }
+h1, h2, h3 { line-height: 1.25; margin: 0; }
+h1 { font-size: clamp(28px, 4.4vw, 38px); letter-spacing: -.01em; }
+h2 { font-size: 24px; }
+h3 { font-size: 20px; }
+p { margin: 0; }
 [hidden] { display: none !important; }
-.muted { color: var(--muted); } .dim { color: var(--dim); } .mono { font-family: var(--mono); }
+:focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; border-radius: 6px; }
 
-header { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; justify-content: space-between;
-  padding: 14px 24px; border-bottom: 1px solid var(--line); }
-.brand h1 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
-.brand h1 span { color: var(--ok); }
-.brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
-.who { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
-.pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); margin-right: 5px; }
-.pulse.on { background: var(--ok); }
-.notice { margin: 12px 24px 0; padding: 10px 14px; border: 1px solid #4a3b12; background: #1d1808;
-  border-radius: 10px; color: #f5d98b; font-size: 13px; }
+/* buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px;
+  padding: 12px 24px; border-radius: 12px; border: 2px solid var(--line-strong); background: var(--surface);
+  color: var(--text); font: 700 18px/1.2 var(--font); cursor: pointer; text-decoration: none; }
+.btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand); }
+.btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn.primary:hover:not(:disabled) { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
+.btn.good { background: var(--good); border-color: var(--good); color: #fff; }
+.btn.good:hover:not(:disabled) { filter: brightness(.92); color: #fff; }
+.btn.big { min-height: 60px; font-size: 20px; padding: 14px 32px; }
+.btn.wide { width: 100%; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.linkbtn { background: none; border: 0; padding: 6px 2px; color: var(--brand); font: inherit; text-decoration: underline;
+  text-underline-offset: 3px; cursor: pointer; }
 
-main { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 16px; padding: 16px 24px 32px; }
-@media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 12px 16px; } header { padding: 12px 16px; }
-  .notice { margin: 12px 16px 0; } }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
-.card + .card { margin-top: 16px; }
-.card h2 { margin: 0 0 10px; font-size: 15px; }
-.card h3 { margin: 14px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-.stack > * + * { margin-top: 10px; }
-.radio { display: flex; gap: 8px; align-items: flex-start; color: var(--muted); font-size: 13px; }
-.radio input { width: auto; margin-top: 3px; }
-.radio b { color: var(--text); font-weight: 600; }
+/* layout */
+.top { background: var(--surface); border-bottom: 1px solid var(--line); }
+.top .in { max-width: 980px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: var(--text); text-decoration: none; }
+.brand .mark { width: 34px; height: 34px; border-radius: 9px; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 19px; }
+.top nav { display: flex; align-items: center; gap: 6px; }
+.top nav .navlink { padding: 10px 14px; border-radius: 10px; color: var(--text); text-decoration: none; font-weight: 700; }
+.top nav .navlink:hover { background: var(--surface-2); }
+main { max-width: 980px; margin: 0 auto; padding: 32px 20px 56px; }
+.narrow { max-width: 720px; margin: 0 auto; }
+.stack > * + * { margin-top: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 26px 28px; }
+.muted { color: var(--muted); }
+.small { font-size: 16px; }
+.back { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; text-decoration: none; margin-bottom: 18px; }
+.section-title { margin: 36px 0 14px; font-size: 22px; }
+footer { border-top: 1px solid var(--line); background: var(--surface); }
+footer .in { max-width: 980px; margin: 0 auto; padding: 24px 20px 32px; font-size: 16px; color: var(--muted); display: grid; gap: 10px; }
 
-.list { list-style: none; margin: 0; padding: 0; }
-.list li { padding: 8px 10px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
-.list li:hover { background: var(--panel-2); }
-.list li.sel { border-color: #2c3850; background: var(--panel-2); }
-.list .t { font-size: 14px; } .list .s { font-size: 12px; color: var(--muted); }
-.pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border: 1px solid var(--line); color: var(--muted); }
-.pill.running, .pill.action_required, .pill.queued { color: var(--accent); border-color: #24406b; }
-.pill.done, .pill.closed, .pill.strong { color: var(--ok); border-color: #1d5240; }
-.pill.failed, .pill.weak { color: var(--err); border-color: #5c2626; }
-.pill.awaiting_human, .pill.possible, .pill.stopped { color: var(--warn); border-color: #5a4614; }
+/* welcome */
+.hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; padding: 20px 0 8px; }
+.hero h1 { font-size: clamp(32px, 5vw, 46px); }
+.hero .lead { font-size: 21px; color: var(--muted); margin-top: 18px; max-width: 34em; }
+.hero .actions { margin-top: 28px; display: grid; gap: 10px; justify-items: start; }
+.hero .reassure { font-size: 16px; color: var(--muted); }
+.signin { margin-top: 18px; max-width: 420px; }
+.field { display: grid; gap: 6px; }
+.field label { font-weight: 700; }
+input[type=email], input[type=password], textarea, select { font: inherit; color: var(--text); background: var(--surface);
+  border: 2px solid var(--line-strong); border-radius: 10px; padding: 12px 14px; width: 100%; }
+input:focus, textarea:focus, select:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
+.how { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.how li { display: grid; grid-template-columns: 48px 1fr; gap: 14px; align-items: start; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+.how .n { width: 48px; height: 48px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-weight: 700; font-size: 20px; }
+.how b { display: block; font-size: 19px; }
+.how span { color: var(--muted); font-size: 16px; }
+.msg-error { color: var(--bad); font-weight: 700; }
 
-.empty { color: var(--muted); padding: 40px 10px; text-align: center; }
-.title-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; }
-.title-row h2 { margin: 0; font-size: 18px; }
-.stages { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
-.stage { font-size: 12px; padding: 4px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); }
-.stage.working { color: var(--text); border-color: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 30%, transparent); }
-.stage.done { color: var(--c); border-color: color-mix(in srgb, var(--c) 50%, var(--line)); }
-.stage.retry { color: var(--warn); border-color: var(--warn); }
-.stage.error { color: var(--err); border-color: var(--err); }
+/* home */
+.home-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.appeals { display: grid; gap: 16px; }
+.appeal-card { display: grid; grid-template-columns: 1fr auto; gap: 6px 18px; align-items: center; background: var(--surface);
+  border: 1px solid var(--line); border-left: 6px solid var(--line-strong); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 22px 24px; color: var(--text); text-decoration: none; }
+.appeal-card:hover { border-color: var(--brand); border-left-color: var(--brand); }
+.appeal-card .t { font-size: 22px; font-weight: 700; }
+.appeal-card .next { font-size: 18px; }
+.appeal-card .meta { font-size: 16px; color: var(--muted); }
+.appeal-card .go { grid-row: 1 / span 4; grid-column: 2; font-weight: 700; color: var(--brand); white-space: nowrap; }
+.appeal-card.attn { border-left-color: var(--attn); } .appeal-card.good { border-left-color: var(--good); }
+.appeal-card.wait { border-left-color: var(--wait); } .appeal-card.bad { border-left-color: var(--bad); }
+.status { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; padding: 4px 12px; border-radius: 999px; width: fit-content; }
+.status::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+.status.attn { background: var(--attn-soft); color: var(--attn); } .status.good { background: var(--good-soft); color: var(--good); }
+.status.wait { background: var(--wait-soft); color: var(--wait); } .status.bad { background: var(--bad-soft); color: var(--bad); }
+.status.work { background: var(--brand-soft); color: var(--brand); }
+.empty { text-align: center; padding: 44px 28px; }
+.empty p { margin: 10px auto 24px; max-width: 30em; color: var(--muted); }
 
-.log { max-height: 52vh; overflow-y: auto; font-family: var(--mono); font-size: 12.5px; margin-top: 10px;
-  border-top: 1px solid var(--line); padding-top: 6px; }
-.row { display: grid; grid-template-columns: 64px 150px 16px 1fr; gap: 8px; padding: 2px 0; align-items: baseline; }
-.row .t { color: var(--dim); text-align: right; }
-.row .a { color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row .k { text-align: center; color: var(--muted); }
-.row .m { overflow-wrap: anywhere; }
-.row.warn .m { color: var(--warn); } .row.error .m { color: var(--err); } .row.done .m { color: #c9f5e2; }
-@media (max-width: 700px) { .row { grid-template-columns: 1fr; gap: 0; padding: 4px 0; } .row .t, .row .k { display: none; } }
+/* new appeal */
+fieldset { border: 0; margin: 0 0 32px; padding: 0; }
+legend { font-size: 22px; font-weight: 700; margin-bottom: 14px; padding: 0; }
+.choices { display: grid; gap: 12px; }
+.choice { position: relative; display: grid; grid-template-columns: 28px 1fr; gap: 14px; align-items: start; background: var(--surface);
+  border: 2px solid var(--line); border-radius: var(--radius); padding: 18px 20px; cursor: pointer; }
+.choice:hover { border-color: var(--line-strong); }
+.choice:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); }
+.choice input { width: 24px; height: 24px; margin: 3px 0 0; accent-color: var(--brand); }
+.choice b { font-size: 19px; display: block; }
+.choice span { color: var(--muted); font-size: 16px; }
+.choice .tag { display: inline-block; margin-left: 8px; padding: 1px 10px; border-radius: 999px; background: var(--good-soft); color: var(--good); font-size: 14px; font-weight: 700; vertical-align: 2px; }
+.upload-box { margin-top: 12px; padding: 16px; border: 2px dashed var(--line-strong); border-radius: 12px; background: var(--surface); }
+.note { background: var(--attn-soft); border: 1px solid var(--attn-line); border-radius: 12px; padding: 14px 16px; font-size: 16px; }
 
-.waiting { border: 1px solid #5a4614; background: #1d1808; border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
-.waiting b { color: var(--warn); }
-.task { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between;
-  padding: 8px 0; border-top: 1px solid #3a2f10; }
-.task:first-of-type { border-top: none; }
-.draft { border: 1px solid var(--line); border-radius: 10px; margin: 10px 0; }
-.draft .meta { padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); display: flex;
-  flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; align-items: center; }
-.draft pre { margin: 0; padding: 12px; max-height: 300px; overflow: auto; white-space: pre-wrap; font: 13px/1.5 var(--mono); }
-.mail { padding: 8px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
-.mail .sim { color: var(--dim); font-size: 12px; }
-.toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
-.toast { position: fixed; right: 16px; bottom: 16px; max-width: min(420px, calc(100vw - 32px)); background: var(--panel-2);
-  border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 14px; box-shadow: 0 6px 24px #0008; }
-.toast.err { border-color: #5c2626; color: #fecaca; }
+/* appeal page */
+.appeal-head { margin-bottom: 22px; }
+.appeal-head .meta { color: var(--muted); margin-top: 6px; }
+.banner { border-radius: var(--radius); padding: 24px 26px; display: grid; gap: 8px; border: 2px solid; }
+.banner h2 { font-size: 26px; }
+.banner.attn { background: var(--attn-soft); border-color: var(--attn-line); }
+.banner.wait { background: var(--wait-soft); border-color: #c6d4e6; }
+.banner.good { background: var(--good-soft); border-color: #a7d7b8; }
+.banner.bad { background: var(--bad-soft); border-color: #f2b8b2; }
+.banner.work { background: var(--brand-soft); border-color: #b9cfea; }
+.steps { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 4px; }
+.steps li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: center; padding: 10px 6px; border-radius: 10px; }
+.steps .ic { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--line-strong); display: grid; place-items: center; font-weight: 700; color: var(--faint); background: var(--surface); }
+.steps li.done .ic { background: var(--good); border-color: var(--good); color: #fff; }
+.steps li.doing { background: var(--surface); }
+.steps li.doing .ic { border-color: var(--brand); color: var(--brand); }
+.steps li.doing .ic::after { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--brand); border-right-color: transparent; animation: spin 1s linear infinite; }
+.steps li.doing .lbl { font-weight: 700; }
+.steps li.todo .lbl { color: var(--faint); }
+.steps .sub { display: block; font-size: 15px; color: var(--muted); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .steps li.doing .ic::after { animation: none; } }
+.verdict { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; align-items: center; }
+.verdict .badge { grid-row: span 2; width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; font-weight: 700; }
+.verdict.strong .badge { background: var(--good-soft); color: var(--good); }
+.verdict.possible .badge { background: var(--attn-soft); color: var(--attn); }
+.verdict.weak .badge { background: var(--bad-soft); color: var(--bad); }
+.verdict h3 { font-size: 22px; }
+.todo-card { display: grid; gap: 12px; background: var(--surface); border: 2px solid var(--attn-line); border-radius: var(--radius); padding: 22px 24px; box-shadow: var(--shadow); }
+.todo-card h3 { font-size: 21px; }
+.todo-card .due { font-weight: 700; color: var(--attn); }
+.quote { border-left: 4px solid var(--line-strong); padding: 6px 0 6px 14px; color: var(--muted); font-size: 16px; }
+.quote b { color: var(--text); }
+.todo-card .actions, .row-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.letters { display: grid; gap: 12px; }
+.letter-row { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: center; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px; box-shadow: var(--shadow); }
+.letter-row b { font-size: 19px; }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.timeline li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); }
+.timeline .who { font-weight: 700; }
+.timeline .when { color: var(--muted); font-size: 15px; }
+.timeline .kind { display: inline-block; margin-left: 6px; padding: 1px 10px; border-radius: 999px; font-size: 14px; font-weight: 700; background: var(--wait-soft); color: var(--wait); }
+.timeline .practice { font-size: 14px; color: var(--faint); margin-left: 6px; }
+.dates { display: grid; gap: 10px; }
+.date-row { display: grid; grid-template-columns: 150px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; }
+.date-row .d { font-weight: 700; }
+details.demo { margin-top: 40px; background: var(--surface-2); border: 1px dashed var(--line-strong); border-radius: var(--radius); padding: 16px 20px; }
+details.demo summary { cursor: pointer; font-weight: 700; color: var(--muted); }
+details.demo .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+details.demo .btn { min-height: 44px; font-size: 16px; padding: 8px 16px; }
 
-#auth { max-width: 420px; margin: 8vh auto; padding: 0 16px; }
-#auth .card { padding: 20px; }
-#auth h2 { font-size: 18px; }
-.or { text-align: center; color: var(--dim); font-size: 12px; margin: 14px 0; }
+/* dialogs */
+dialog { border: 0; border-radius: 18px; padding: 0; width: min(860px, 96vw); max-height: 94vh; box-shadow: 0 20px 60px rgba(0, 0, 0, .25); color: var(--text); }
+dialog::backdrop { background: rgba(20, 26, 36, .55); }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--surface); position: sticky; top: 0; z-index: 1; }
+.dlg-head h2 { font-size: 22px; }
+.dlg-body { padding: 22px 24px; display: grid; gap: 16px; }
+.dlg-foot { display: flex; gap: 12px; justify-content: flex-end; flex-wrap: wrap; padding: 16px 24px 22px; border-top: 1px solid var(--line); background: var(--surface); position: sticky; bottom: 0; }
+.x { background: none; border: 0; font-size: 30px; line-height: 1; cursor: pointer; color: var(--muted); padding: 4px 10px; border-radius: 8px; }
+.sendto { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+.sendto b { word-break: break-all; }
+.blanks { background: var(--bad-soft); border: 2px solid #f2b8b2; border-radius: 12px; padding: 14px 18px; }
+.blanks b { color: var(--bad); }
+.blanks ul { margin: 8px 0 0; padding-left: 22px; }
+.letter-text { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 28px 32px; font: 18px/1.65 Georgia, "Times New Roman", serif;
+  overflow-x: auto; overflow-wrap: anywhere; }
+.letter-text mark.blank { background: #ffe1a6; color: #5c3200; padding: 1px 4px; border-radius: 4px; font-family: var(--font); font-weight: 700; }
+dialog { overflow-x: hidden; }
+.letter-text table { border-collapse: collapse; font: 16px/1.45 var(--font); margin: 10px 0; max-width: 100%; }
+.letter-text td, .letter-text th { border: 1px solid var(--line); padding: 5px 10px; text-align: left; vertical-align: top; }
+.letter-text h1, .letter-text h2, .letter-text h3 { font: 700 19px/1.3 var(--font); margin: 18px 0 8px; }
+details.notes { background: var(--brand-soft); border-radius: 12px; padding: 12px 16px; font-size: 16px; }
+details.notes summary { cursor: pointer; font-weight: 700; color: var(--brand); }
+details.notes div { white-space: pre-wrap; margin-top: 10px; color: var(--muted); }
+textarea.editor { min-height: 420px; font: 16px/1.55 ui-monospace, Consolas, monospace; }
+.attach { display: flex; flex-wrap: wrap; gap: 8px; }
+.attach span { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 15px; }
+#packetDlg iframe { width: 100%; height: 72vh; border: 0; background: #fff; display: block; }
 
-dialog { width: min(960px, calc(100vw - 32px)); height: calc(100vh - 64px); padding: 0; border: 1px solid var(--line);
-  border-radius: 12px; background: var(--panel); color: var(--text); }
-dialog::backdrop { background: #000a; }
-dialog .bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); }
-dialog iframe { width: 100%; height: calc(100% - 50px); border: 0; background: #fff; }
+/* toasts */
+#toasts { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: grid; gap: 10px; z-index: 50; width: min(560px, 92vw); }
+.toast { background: var(--text); color: #fff; padding: 14px 20px; border-radius: 12px; box-shadow: var(--shadow); font-size: 17px; }
+.toast.err { background: var(--bad); }
+
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; gap: 28px; }
+  .card { padding: 22px 20px; }
+  .appeal-card { grid-template-columns: 1fr; }
+  .appeal-card .go { grid-row: auto; grid-column: auto; }
+  .letter-row { grid-template-columns: 1fr; }
+  .date-row { grid-template-columns: 1fr; gap: 2px; }
+  .letter-text { padding: 20px 18px; }
+  .top nav .navlink { display: none; }
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="brand">
-    <h1>Claim<span>Back</span></h1>
-    <p>A team of Claude agents that drafts your insurance appeal, then manages the case with you.</p>
-  </div>
-  <div class="who" id="who" hidden>
-    <span><span class="pulse" id="workerDot"></span><span id="workerText">worker</span></span>
-    <span id="userText"></span>
-    <button class="small" id="purgeBtn">Delete my data</button>
-    <button class="small" id="signOutBtn">Sign out</button>
-  </div>
-</header>
-<div class="notice"><b>Demo with synthetic cases only.</b> Don't upload real medical or insurance documents:
-  this hosted demo isn't covered by a HIPAA Business Associate Agreement, and it accepts only documents marked
-  <span class="mono">SYNTHETIC TEST DOCUMENT</span>. Everything ClaimBack writes is a draft for a human to check;
-  it isn't legal or medical advice.</div>
+<header class="top"><div class="in">
+  <a class="brand" href="#" aria-label="ClaimBack home"><span class="mark" aria-hidden="true">✓</span>ClaimBack</a>
+  <nav id="nav" hidden aria-label="Main">
+    <a class="navlink" href="#">My appeals</a>
+    <button class="btn" id="accountBtn" style="min-height:44px;padding:8px 16px;font-size:16px">Account</button>
+  </nav>
+</div></header>
 
-<section id="auth" hidden>
-  <div class="card stack">
-    <h2>Sign in to try ClaimBack</h2>
-    <button class="primary" id="guestBtn" style="width:100%">Continue as guest</button>
-    <p class="muted" style="font-size:13px;margin:6px 0 0">A guest account is private to this browser. You can delete its data any time.</p>
-    <div class="or">or with email</div>
-    <form id="emailForm" class="stack">
-      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
-      <input type="password" id="password" placeholder="Password (8+ characters)" minlength="8" autocomplete="current-password" required>
-      <div class="toolbar"><button class="primary" type="submit">Sign in</button>
-        <button type="button" id="signUpBtn">Create account</button></div>
-    </form>
-    <p class="muted" id="authMsg" style="font-size:13px"></p>
-  </div>
-</section>
+<main>
+  <!-- Welcome / sign in -->
+  <section id="welcome" hidden>
+    <div class="hero">
+      <div>
+        <h1>Was your health insurance claim denied?</h1>
+        <p class="lead">ClaimBack helps you appeal. We read your denial letter, check your insurance plan's own rules, and write the appeal letter for you. You read it first and decide what gets sent.</p>
+        <div class="actions">
+          <button class="btn primary big" id="guestBtn">Get started</button>
+          <span class="reassure">No account or payment needed to try it.</span>
+          <button class="linkbtn" id="showEmail" aria-expanded="false" aria-controls="emailForm">I have an account: sign in with email</button>
+        </div>
+        <form id="emailForm" class="signin stack card" hidden>
+          <div class="field"><label for="email">Email address</label>
+            <input type="email" id="email" autocomplete="email" required></div>
+          <div class="field"><label for="password">Password</label>
+            <input type="password" id="password" minlength="8" autocomplete="current-password" required>
+            <span class="small muted">At least 8 characters.</span></div>
+          <div class="row-actions"><button class="btn primary" type="submit">Sign in</button>
+            <button class="btn" type="button" id="signUpBtn">Create an account</button></div>
+          <p class="msg-error" id="authMsg" role="alert"></p>
+        </form>
+      </div>
+      <ol class="how" aria-label="How ClaimBack works">
+        <li><span class="n">1</span><div><b>Tell us about the denial</b><span>Choose the letter you got from your insurer.</span></div></li>
+        <li><span class="n">2</span><div><b>We prepare your appeal</b><span>We check your plan's rules and medical guidelines, then write your letter and double-check every fact.</span></div></li>
+        <li><span class="n">3</span><div><b>You stay in charge</b><span>Nothing is sent until you read it and say yes. We keep track of every reply and deadline.</span></div></li>
+      </ol>
+    </div>
+  </section>
 
-<main id="app" hidden>
-  <aside>
-    <div class="card stack">
-      <h2>New case</h2>
-      <label class="radio"><input type="radio" name="src" value="sample" checked>
-        <span><b>Sample denial</b><br><select id="sample" style="margin-top:6px;width:100%"></select></span></label>
-      <label class="radio"><input type="radio" name="src" value="upload">
-        <span><b>Your synthetic documents</b> (.txt): a file named <span class="mono">*denial*</span>, plus the plan policy and
-          clinical notes if you have them. Each must contain <span class="mono">SYNTHETIC TEST DOCUMENT</span>.
-          <input type="file" id="files" accept=".txt,text/plain" multiple style="margin-top:6px"></span></label>
-      <h3>Agents</h3>
-      <label class="radio"><input type="radio" name="mode" value="mock" checked>
-        <span><b>Rehearsal</b>: canned agent outputs, about 1 minute, free.</span></label>
-      <label class="radio"><input type="radio" name="mode" value="live">
-        <span><b>Live Claude agents</b>: real research and drafting, 5–10 minutes. <span id="quota"></span></span></label>
-      <button class="go" id="startBtn" style="width:100%">Start the agent team</button>
+  <!-- Home -->
+  <section id="home" hidden>
+    <div class="home-head">
+      <div><h1>Your appeals</h1><p class="muted" id="hello" style="margin-top:6px"></p></div>
+      <a class="btn primary big" href="#new">Start a new appeal</a>
     </div>
-    <div class="card">
-      <h2>Your cases</h2>
-      <ul class="list" id="caseList"></ul>
-      <h3>Runs</h3>
-      <ul class="list" id="runList"></ul>
-    </div>
-  </aside>
-  <section id="view"><div class="card empty">Start a case on the left. You'll watch the agents work live, get the appeal packet,
-    and then manage the case: approve what gets sent, answer the insurer, and confirm the outcome.</div></section>
+    <div class="appeals" id="appealList"></div>
+  </section>
+
+  <!-- New appeal -->
+  <section id="newAppeal" hidden class="narrow">
+    <a class="back" href="#">‹ Back to your appeals</a>
+    <h1>Start a new appeal</h1>
+    <p class="muted" style="margin:10px 0 30px">Two quick questions, then we get to work. You'll read everything before anything is sent.</p>
+    <fieldset>
+      <legend>1. Which denial is it?</legend>
+      <div class="choices" id="sampleChoices"></div>
+      <label class="choice" style="margin-top:12px"><input type="radio" name="src" value="upload">
+        <div><b>Upload my own denial letter</b>
+          <span>For this demo, only practice documents work: text files that say "SYNTHETIC TEST DOCUMENT". Please don't upload real medical records.</span>
+          <div class="upload-box" id="uploadBox" hidden>
+            <label class="field"><span style="font-weight:700">Choose your files</span>
+              <input type="file" id="files" accept=".txt,text/plain" multiple></label>
+            <p class="small muted" style="margin-top:8px">Include the denial letter (its file name must contain "denial"). Add your plan's policy and your doctor's notes if you have them.</p>
+          </div>
+        </div></label>
+    </fieldset>
+    <fieldset>
+      <legend>2. How thorough should we be?</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="mode" value="mock" checked>
+          <div><b>Quick preview <span class="tag">About 1 minute</span></b>
+            <span>Shows you how it works using a ready-made example result.</span></div></label>
+        <label class="choice"><input type="radio" name="mode" value="live">
+          <div><b>Full review <span class="tag">About 10 minutes</span></b>
+            <span>We read every document, look up current medical guidelines and write a fresh letter. <span id="quota"></span></span></div></label>
+      </div>
+    </fieldset>
+    <button class="btn primary big wide" id="startBtn">Start my appeal</button>
+  </section>
+
+  <!-- One appeal -->
+  <section id="appeal" hidden></section>
 </main>
 
-<dialog id="packetDlg"><div class="bar"><b>Appeal packet</b><div class="toolbar">
-  <button class="small" id="packetDownload">Download</button><button class="small" id="packetClose">Close</button></div></div>
-  <iframe id="packetFrame" sandbox="allow-modals" title="Appeal packet"></iframe></dialog>
+<footer><div class="in">
+  <p><b>This is a demonstration.</b> Please use the example cases or practice documents only, and don't upload real medical or insurance records. ClaimBack prepares drafts for you to check; it isn't legal or medical advice.</p>
+  <p>Curious how it works? <a href="../">See the AI team that prepares each appeal</a>.</p>
+</div></footer>
+
+<!-- Letter: read, fill in, send -->
+<dialog id="letterDlg" aria-labelledby="letterTitle">
+  <div class="dlg-head"><h2 id="letterTitle">Your letter</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="dlg-body" id="letterBody"></div>
+  <div class="dlg-foot" id="letterFoot"></div>
+</dialog>
+
+<!-- Appeal packet -->
+<dialog id="packetDlg" aria-labelledby="packetTitle">
+  <div class="dlg-head"><h2 id="packetTitle">Your appeal packet</h2>
+    <div class="row-actions"><button class="btn" id="packetDownload" style="min-height:44px;font-size:16px">Download</button>
+      <button class="x" data-close aria-label="Close">×</button></div></div>
+  <iframe id="packetFrame" sandbox="allow-modals" title="Appeal packet"></iframe>
+</dialog>
+
+<!-- Confirm -->
+<dialog id="confirmDlg" aria-labelledby="confirmTitle" style="width:min(520px,94vw)">
+  <div class="dlg-body"><h2 id="confirmTitle"></h2><p id="confirmText" class="muted"></p></div>
+  <div class="dlg-foot"><button class="btn" id="confirmNo">Go back</button><button class="btn primary" id="confirmYes">Yes</button></div>
+</dialog>
+
+<!-- Account -->
+<dialog id="accountDlg" aria-labelledby="accountTitle" style="width:min(520px,94vw)">
+  <div class="dlg-head"><h2 id="accountTitle">Your account</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="dlg-body"><p id="accountWho"></p>
+    <p class="small muted">Deleting your information removes every appeal, letter and document in this account. It can't be undone.</p></div>
+  <div class="dlg-foot"><button class="btn" id="purgeBtn">Delete all my information</button><button class="btn primary" id="signOutBtn">Sign out</button></div>
+</dialog>
+
+<div id="toasts" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
 <script src="config.js"></script>
 <script>
 "use strict";
@@ -185,27 +348,46 @@ const C = window.CLAIMBACK;
 const sb = supabase.createClient(C.supabaseUrl, C.supabaseKey);
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
-const AGENTS = {
-  orchestrator: ["Orchestrator", "#e5e7eb"], intake: ["Intake", "#22d3ee"], planner: ["Planner", "#e879f9"],
-  policy_analyst: ["Policy Analyst", "#60a5fa"], evidence_researcher: ["Evidence Researcher", "#4ade80"],
-  writer: ["Writer", "#facc15"], reviewer: ["Adversarial Reviewer", "#f87171"], fact_checker: ["Fact Checker", "#f0abfc"],
-  packager: ["Packager", "#86efac"], case_worker: ["Case worker", "#67e8f9"], connector: ["Mail", "#a5f3fc"],
-  insurer_sim: ["Simulated insurer", "#9ca3af"], correspondence: ["Correspondence", "#93c5fd"],
+
+// Plain-language names for the example cases (the security test case stays on the technical site)
+const SAMPLES = {
+  "cgm-denial": {title: "Glucose monitor (CGM)", text: "Denied as “not medically necessary”, even though the patient takes insulin every day."},
+  "mri-red-flag": {title: "Back MRI scan", text: "Denied for skipping 6 weeks of physical therapy, even though the patient's leg is getting weaker."},
+  "weak-cgm": {title: "Glucose monitor (CGM): harder case", text: "Denied because the patient isn't on insulin. Shows what we say when an appeal is unlikely to win."},
 };
-const PIPELINE = ["intake", "planner", "policy_analyst", "evidence_researcher", "writer", "reviewer", "fact_checker", "packager"];
-const MARK = {start: "▶", done: "✓", handoff: "→", retry: "↻", error: "✗", loop: "⟲", warn: "!", info: "·"};
-const SCENES = [["ack", "Acknowledges receipt"], ["evidence-request", "Asks for more evidence"],
-                ["overturned", "Overturns the denial"], ["upheld", "Upholds the denial"]];
+const titleFor = (name) => SAMPLES[name]?.title || "Your appeal";
 
-let session = null, runs = [], cases = [], current = null, channel = null, cfg = null;
+// What each behind-the-scenes step means for the person waiting
+const STEPS = [
+  ["intake", "Reading your denial letter", "We hide your name and ID numbers first."],
+  ["planner", "Working out why it was denied", ""],
+  ["policy_analyst", "Checking your insurance plan's own rules", ""],
+  ["evidence_researcher", "Looking up medical guidelines", ""],
+  ["writer", "Writing your appeal letter", ""],
+  ["reviewer", "Testing the letter the way your insurer would", "If it isn't convincing yet, we improve it."],
+  ["fact_checker", "Checking every fact in the letter", ""],
+  ["packager", "Putting your appeal packet together", ""],
+];
+const VERDICT = {
+  strong: {icon: "✓", title: "Good chance", text: "Your insurance plan's own rules appear to support you. We recommend sending this appeal."},
+  possible: {icon: "!", title: "Worth trying", text: "You have a case, but a few things need to be filled in or confirmed first. We've listed them for you."},
+  weak: {icon: "✕", title: "Unlikely to succeed", text: "Your plan's rules seem to support the denial. Your appeal packet explains why and lists other ways to get the care."},
+};
+const MSG_KIND = {acknowledgment: "Received your appeal", evidence_request: "Asked for more information",
+  decision: "Made a decision", administrative: "Update", unclear: "Needs a closer look"};
+const DATE_BLANKS = /\[(DATE(_OF)?_(LETTER|SIGNATURE|SIGNED|SENDING)|DATE_SIGNED|DATE|TODAY)\]/gi;
+const BLANK = /\[(?=[^\]\n]*[A-Z]{3,})[^\]\n]{3,}\](?!\()/g;
 
-// ---- small helpers -------------------------------------------------------------
+let session = null, runs = [], cases = [], cfg = null, channel = null, view = {name: null}, pendingJobs = {};
+const eventsByRun = {};
+
+// ---- helpers ------------------------------------------------------------------------
 function toast(msg, err = false) {
   const t = document.createElement("div");
   t.className = "toast" + (err ? " err" : "");
   t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), err ? 7000 : 4000);
+  $("toasts").appendChild(t);
+  setTimeout(() => t.remove(), err ? 8000 : 5000);
 }
 async function api(path, body) {
   const r = await fetch(C.apiUrl + path, {
@@ -214,79 +396,110 @@ async function api(path, body) {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.detail || `request failed (${r.status})`);
+  if (!r.ok) throw new Error(data.detail || "Something went wrong. Please try again in a moment.");
   return data;
 }
-const fmtTime = (iso) => new Date(iso).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit", second: "2-digit"});
-const label = (s) => String(s || "").replaceAll("_", " ");
+const longDate = (d) => new Date(d).toLocaleDateString([], {month: "long", day: "numeric", year: "numeric"});
+const shortDate = (d) => new Date(d).toLocaleDateString([], {month: "long", day: "numeric"});
+function dueText(iso) {
+  if (!iso) return "";
+  const d = new Date(iso + "T12:00:00"), days = Math.round((d - new Date()) / 864e5);
+  const left = days > 1 ? `${days} days left` : days === 1 ? "1 day left" : days === 0 ? "due today" : `${-days} days ago`;
+  return `${shortDate(d)} (${left})`;
+}
+const fillDates = (t) => t.replace(DATE_BLANKS, longDate(new Date()));
+const blanksIn = (t) => [...new Set(fillDates(t || "").match(BLANK) || [])];
+// Blanks are highlighted where they sit in the letter, so they're easy to find
+const renderLetter = (md) => DOMPurify.sanitize(marked.parse(fillDates(md || "").replace(BLANK, (b) =>
+  `<mark class="blank">${esc(blankLabel(b))}</mark>`), {breaks: true}));
+// "[CGM_SYSTEM_NAME_AND_MODEL – to be entered by clinic]" -> "CGM system name and model – to be entered by clinic"
+function blankLabel(b) {
+  const inner = b.slice(1, -1);
+  if (!inner.includes("_")) return inner;  // already written as words
+  const KEEP = new Set(["CGM", "FDA", "MRI", "ID", "DOB", "HCPCS", "CPT", "NPI"]);
+  const out = inner.replace(/[A-Z0-9]+(?:_[A-Z0-9]+)+/g, (tok) => tok.split("_").map((w) => KEEP.has(w) ? w : w.toLowerCase()).join(" "));
+  return out.charAt(0).toUpperCase() + out.slice(1);
+}
 
-// ---- auth -------------------------------------------------------------------------
+function confirmAsk(title, text, yes = "Yes") {
+  return new Promise((resolve) => {
+    $("confirmTitle").textContent = title; $("confirmText").textContent = text; $("confirmYes").textContent = yes;
+    const dlg = $("confirmDlg");
+    $("confirmYes").onclick = () => { dlg.close(); resolve(true); };
+    $("confirmNo").onclick = () => { dlg.close(); resolve(false); };
+    dlg.oncancel = () => resolve(false);
+    dlg.showModal();
+  });
+}
+document.querySelectorAll("[data-close]").forEach((b) => b.onclick = () => b.closest("dialog").close());
+
+// ---- sign in -------------------------------------------------------------------------
 $("guestBtn").onclick = async () => {
+  $("guestBtn").disabled = true;
   const {error} = await sb.auth.signInAnonymously();
-  if (error) $("authMsg").textContent = error.message;
+  if (error) { toast("We couldn't start a guest session. Please try again.", true); $("guestBtn").disabled = false; }
+};
+$("showEmail").onclick = () => {
+  const f = $("emailForm"); f.hidden = !f.hidden;
+  $("showEmail").setAttribute("aria-expanded", String(!f.hidden));
+  if (!f.hidden) $("email").focus();
 };
 $("emailForm").onsubmit = async (e) => {
   e.preventDefault();
   const {error} = await sb.auth.signInWithPassword({email: $("email").value, password: $("password").value});
-  if (error) $("authMsg").textContent = error.message;
+  $("authMsg").textContent = error ? "That email and password don't match. Please try again." : "";
 };
 $("signUpBtn").onclick = async () => {
+  if (!$("emailForm").reportValidity()) return;
   const {data, error} = await sb.auth.signUp({email: $("email").value, password: $("password").value});
-  $("authMsg").textContent = error ? error.message : data.session ? "" : "Check your email to confirm the account.";
+  $("authMsg").textContent = error ? error.message : data.session ? "" : "We sent you an email. Click the link in it to finish creating your account.";
 };
-$("signOutBtn").onclick = () => sb.auth.signOut();
+$("accountBtn").onclick = () => {
+  $("accountWho").textContent = session.user.is_anonymous
+    ? "You're using a guest account. It's private to this browser."
+    : `You're signed in as ${session.user.email}.`;
+  $("accountDlg").showModal();
+};
+$("signOutBtn").onclick = () => { $("accountDlg").close(); sb.auth.signOut(); };
 $("purgeBtn").onclick = async () => {
-  if (!confirm("Delete every run, case, document and packet in this account? This can't be undone.")) return;
-  try { await api("/me/purge", {}); runs = []; cases = []; current = null; renderLists(); renderEmpty(); toast("Your data is being deleted."); }
+  $("accountDlg").close();
+  if (!(await confirmAsk("Delete all your information?", "This removes every appeal, letter and document in this account. It can't be undone.", "Yes, delete everything"))) return;
+  try { await api("/me/purge", {}); runs = []; cases = []; location.hash = ""; render(); toast("Your information is being deleted."); }
   catch (e) { toast(e.message, true); }
 };
 sb.auth.onAuthStateChange((_event, s) => {
   const was = session?.user?.id;
   session = s;
-  $("auth").hidden = !!s; $("app").hidden = !s; $("who").hidden = !s;
-  if (s) $("authMsg").textContent = "";
+  $("nav").hidden = !s;
   if (s && s.user.id !== was) boot();
-  if (!s && channel) { sb.removeChannel(channel); channel = null; }
+  if (!s) { if (channel) { sb.removeChannel(channel); channel = null; } runs = []; cases = []; render(); }
 });
 
-// ---- data -------------------------------------------------------------------------
+// ---- data ------------------------------------------------------------------------------
 async function boot() {
-  $("userText").textContent = session.user.is_anonymous ? "guest" : session.user.email;
   const [r, c] = await Promise.all([
     sb.from("runs").select("*").order("created_at", {ascending: false}),
     sb.from("cases").select("*").order("created_at", {ascending: false}),
   ]);
   runs = r.data || []; cases = c.data || [];
-  renderLists();
   subscribe();
+  render();
   loadConfig();
-  heartbeat();
-  route();
 }
 async function loadConfig() {
-  try {
-    cfg = await api("/config");
-    $("sample").innerHTML = Object.entries(cfg.samples).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join("");
-    $("quota").textContent = `${cfg.live_runs_left} of ${cfg.live_runs_per_user} left today.`;
-  } catch (e) {
-    $("sample").innerHTML = `<option value="cgm-denial">Continuous glucose monitor denial</option>`;
-    $("quota").textContent = "";
-    toast("The agent worker isn't reachable right now: " + e.message, true);
+  try { cfg = await api("/config"); } catch { cfg = null; }
+  $("quota").textContent = cfg ? `You can do ${cfg.live_runs_left} more full review${cfg.live_runs_left === 1 ? "" : "s"} today.` : "";
+  if (cfg && !cfg.live_runs_left) {
+    const live = document.querySelector("input[name=mode][value=live]"); live.disabled = true;
+    document.querySelector("input[name=mode][value=mock]").checked = true;
   }
-}
-async function heartbeat() {
-  const {data} = await sb.from("worker_heartbeat").select("at").eq("id", "case-worker").maybeSingle();
-  const fresh = data && Date.now() - new Date(data.at) < 6 * 60 * 1000;
-  $("workerDot").className = "pulse" + (fresh ? " on" : "");
-  $("workerText").textContent = fresh ? "case worker online" : "case worker idle";
-  clearTimeout(heartbeat.t); heartbeat.t = setTimeout(heartbeat, 60000);
 }
 function subscribe() {
   if (channel) sb.removeChannel(channel);
   channel = sb.channel("claimback-" + session.user.id)
     .on("postgres_changes", {event: "INSERT", schema: "public", table: "events"}, ({new: e}) => onEvent(e))
-    .on("postgres_changes", {event: "*", schema: "public", table: "runs"}, ({new: r}) => { upsert(runs, r); renderLists(); if (current?.type === "run" && current.id === r.id) renderRunHead(); })
-    .on("postgres_changes", {event: "*", schema: "public", table: "cases"}, ({new: c}) => { upsert(cases, c); renderLists(); if (current?.type === "case" && current.id === c.id) renderCase(); })
+    .on("postgres_changes", {event: "*", schema: "public", table: "runs"}, ({new: r}) => { upsert(runs, r); refresh(); })
+    .on("postgres_changes", {event: "*", schema: "public", table: "cases"}, ({new: c}) => { upsert(cases, c); refresh(); })
     .on("postgres_changes", {event: "UPDATE", schema: "public", table: "jobs"}, ({new: j}) => onJob(j))
     .subscribe();
 }
@@ -295,228 +508,364 @@ function upsert(list, row) {
   const i = list.findIndex((x) => x.id === row.id);
   if (i >= 0) list[i] = row; else list.unshift(row);
 }
-function onJob(j) {
-  if (j.status === "failed") toast(j.error || "That didn't work.", true);
-  if (j.status === "done" && j.kind === "start_run" && j.result?.case_id) toast("Appeal packet ready. Case opened.");
-  if (j.status === "done" && j.kind === "approve") toast("Sent to the insurer.");
-}
 function onEvent(e) {
-  if (!current) return;
-  if ((current.type === "run" && e.run_id === current.id) || (current.type === "case" && e.case_id === current.id)) {
-    current.events.push(e);
-    appendRow(e);
-    if (current.type === "run") paintStages();
+  if (!e.run_id || !eventsByRun[e.run_id]) return;
+  eventsByRun[e.run_id].push(e);
+  if (view.name === "appeal" && view.id === e.run_id) refresh();
+}
+const JOB_DONE = {approve: "Your letter was sent to your insurer.", upload: "Thank you. We received your file and we're preparing your reply.",
+  edit: "Your changes are saved.", confirm: "Your appeal is closed. Thank you for using ClaimBack.", simulate: "Practice message sent. Give it a few seconds to arrive."};
+function onJob(j) {
+  if (j.status === "failed") toast(friendlyError(j.error), true);
+  if (j.status === "done" && JOB_DONE[j.kind]) toast(JOB_DONE[j.kind]);
+  if (j.status === "done" && j.kind === "start_run" && j.result?.case_id) toast("Your appeal is ready to look at.");
+  if (pendingJobs[j.id] && (j.status === "done" || j.status === "failed")) { pendingJobs[j.id](j); delete pendingJobs[j.id]; }
+}
+function friendlyError(msg) {
+  msg = String(msg || "");
+  if (/blanks? before sending/i.test(msg)) return "Please fill in the highlighted blanks in the letter before sending it.";
+  if (/not an allowed recipient/i.test(msg)) return "For your safety, we only send letters to your insurer's address.";
+  return "That didn't work. " + msg.replace(/^[A-Za-z]+Error: /, "");
+}
+
+// ---- appeal state: one plain sentence for every situation ---------------------------------
+function caseFor(run) { return cases.find((c) => c.run_id === run.id); }
+function stateOf(run) {
+  const c = caseFor(run), d = c?.data || {};
+  if (run.status === "failed") return {cls: "bad", label: "Something went wrong", next: "We couldn't finish preparing this appeal. Please start it again."};
+  if (!c) return run.packet_path
+    ? {cls: "work", label: "Almost ready", next: "Your appeal packet is ready. We're setting up the rest."}
+    : {cls: "work", label: "Being prepared", next: "We're working on your appeal right now."};
+  const mine = (d.tasks || []).filter((t) => t.status === "open" && t.owner === "user");
+  if (c.status === "closed") {
+    const r = d.outcome?.result;
+    return r === "upheld" ? {cls: "bad", label: "Finished: denied", next: "Your insurer kept the denial. You may be able to ask for an independent review."}
+      : {cls: "good", label: "Finished: approved", next: "Your insurer approved your claim."};
+  }
+  if (mine.length) return {cls: "attn", label: "Needs your attention", next: taskSentence(mine[0], d)};
+  if (c.status === "awaiting_insurer") return {cls: "wait", label: "Waiting for your insurer", next: `We'll read ${d.insurer_name || "your insurer"}'s reply as soon as it arrives.`};
+  return {cls: "work", label: "We're working on it", next: "We're preparing your next letter."};
+}
+function taskSentence(t, d) {
+  if (t.kind === "approve_send") return "Read your letter and send it when you're happy with it.";
+  if (t.kind === "upload_evidence") return `Send us ${lowerFirst(itemName(t.title))}${t.due_date ? ` by ${shortDate(t.due_date + "T12:00")}` : ""}.`;
+  if (t.kind === "confirm_outcome") return "Your insurer sent a decision. Please confirm it.";
+  if (t.kind === "consider_external_review") return "Decide whether to ask for an independent review.";
+  if (t.kind === "confirm_sender") return "We got a message from an address we don't recognize. Please take a look.";
+  return "Please read the latest message from your insurer.";
+}
+const lowerFirst = (s) => s ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+// "Provide: X (within 14 calendar days...) by 2026-10-29" -> "X": the due date is shown on its own, in words
+const itemName = (title) => title.replace(/^Provide:\s*/, "").replace(/\s*\(within [^)]*\)/i, "").replace(/\s+by \d{4}-\d{2}-\d{2}\s*$/, "").trim();
+
+// ---- routing --------------------------------------------------------------------------------
+window.addEventListener("hashchange", render);
+function render() {
+  const signedIn = !!session;
+  const [kind, raw] = location.hash.slice(1).split("/");
+  let id = raw ? decodeURIComponent(raw) : null;
+  if (kind === "case" && id) id = cases.find((c) => c.id === id)?.run_id || id;  // older links
+  view = !signedIn ? {name: "welcome"} : kind === "new" ? {name: "new"}
+    : (kind === "appeal" || kind === "run" || kind === "case") && id ? {name: "appeal", id} : {name: "home"};
+  $("welcome").hidden = view.name !== "welcome";
+  $("home").hidden = view.name !== "home";
+  $("newAppeal").hidden = view.name !== "new";
+  $("appeal").hidden = view.name !== "appeal";
+  if (view.name === "home") renderHome();
+  if (view.name === "new") renderNew();
+  if (view.name === "appeal") openAppeal(view.id);
+  window.scrollTo(0, 0);
+}
+function refresh() {  // live updates re-render without jumping to the top
+  if (view.name === "home") renderHome();
+  if (view.name === "appeal") renderAppeal();
+}
+
+// ---- home ---------------------------------------------------------------------------------------
+function renderHome() {
+  $("hello").textContent = runs.length ? "Pick an appeal to see where it stands." : "";
+  $("appealList").innerHTML = runs.length ? runs.map((r) => {
+    const s = stateOf(r), c = caseFor(r);
+    return `<a class="appeal-card ${s.cls}" href="#appeal/${encodeURIComponent(r.id)}">
+      <span class="t">${esc(titleFor(r.case_name))}</span>
+      <span class="status ${s.cls}">${esc(s.label)}</span>
+      <span class="next">${esc(s.next)}</span>
+      <span class="meta">Started ${esc(longDate(r.created_at))}${c?.data?.insurer_name ? " · " + esc(c.data.insurer_name) : ""}${r.mode === "mock" ? " · Quick preview" : ""}</span>
+      <span class="go" aria-hidden="true">Open ›</span></a>`;
+  }).join("") : `<div class="card empty"><h2>You don't have any appeals yet</h2>
+      <p>Start one in a couple of clicks. We'll prepare the letter, and you decide what gets sent.</p>
+      <a class="btn primary big" href="#new">Start a new appeal</a></div>`;
+}
+
+// ---- new appeal ---------------------------------------------------------------------------------
+function renderNew() {
+  if (!$("sampleChoices").children.length) {
+    $("sampleChoices").innerHTML = Object.entries(SAMPLES).map(([k, v], i) => `<label class="choice">
+      <input type="radio" name="src" value="sample:${esc(k)}" ${i === 0 ? "checked" : ""}>
+      <div><b>Example: ${esc(v.title)}</b><span>${esc(v.text)}</span></div></label>`).join("");
+    document.querySelectorAll("input[name=src]").forEach((r) => r.onchange = () => {
+      $("uploadBox").hidden = document.querySelector("input[name=src]:checked").value !== "upload";
+    });
   }
 }
+$("startBtn").onclick = async () => {
+  const btn = $("startBtn");
+  const src = document.querySelector("input[name=src]:checked").value;
+  const mode = document.querySelector("input[name=mode]:checked").value;
+  btn.disabled = true; btn.textContent = "Starting…";
+  try {
+    const body = {mode};
+    if (src.startsWith("sample:")) body.sample = src.slice(7);
+    else {
+      const files = [...$("files").files];
+      if (!files.length) throw new Error("Please choose your denial letter first.");
+      for (const f of files)
+        if (!(await f.text()).includes("SYNTHETIC TEST DOCUMENT"))
+          throw new Error(`"${f.name}" isn't a practice document. This demo only accepts files marked SYNTHETIC TEST DOCUMENT.`);
+      body.uploads = [];
+      for (const f of files) {
+        const path = `${session.user.id}/${Date.now()}-${f.name.replace(/[^A-Za-z0-9._-]/g, "_")}`;
+        const {error} = await sb.storage.from("uploads").upload(path, f, {contentType: "text/plain"});
+        if (error) throw new Error("We couldn't upload that file. Please try again.");
+        body.uploads.push(path);
+      }
+    }
+    const {run_id} = await api("/runs", body);
+    runs.unshift({id: run_id, case_name: body.sample || "uploaded-case", mode, status: "starting", created_at: new Date().toISOString()});
+    location.hash = "appeal/" + encodeURIComponent(run_id);
+    if (mode === "live") loadConfig();
+  } catch (e) { toast(e.message, true); }
+  finally { btn.disabled = false; btn.textContent = "Start my appeal"; }
+};
 
-// ---- lists ----------------------------------------------------------------------------
-function renderLists() {
-  $("caseList").innerHTML = cases.length ? cases.map((c) => {
-    const waiting = (c.data.tasks || []).filter((t) => t.status === "open" && t.owner === "user").length;
-    return `<li data-h="case/${esc(c.id)}" class="${current?.id === c.id ? "sel" : ""}"><div class="t">${esc(c.data.case_name)}
-      <span class="pill ${esc(c.status)}">${esc(label(c.status))}</span></div>
-      <div class="s">${esc(c.data.insurer_name)} · ${waiting ? `${waiting} waiting for you` : esc(label(c.stage))}</div></li>`;
-  }).join("") : `<li class="dim" style="cursor:default">A case opens when a run finishes.</li>`;
-  $("runList").innerHTML = runs.length ? runs.map((r) => `<li data-h="run/${esc(r.id)}" class="${current?.id === r.id ? "sel" : ""}">
-      <div class="t">${esc(r.case_name)} <span class="pill ${esc(r.status)}">${esc(r.status)}</span>
-      ${r.verdict ? `<span class="pill ${esc(r.verdict)}">${esc(r.verdict)}</span>` : ""}</div>
-      <div class="s">${esc(r.mode === "live" ? "live agents" : "rehearsal")} · ${new Date(r.created_at).toLocaleString()}</div></li>`).join("")
-    : `<li class="dim" style="cursor:default">No runs yet.</li>`;
-  document.querySelectorAll(".list li[data-h]").forEach((li) => li.onclick = () => { location.hash = li.dataset.h; });
-}
-
-// ---- routing -----------------------------------------------------------------------------
-window.addEventListener("hashchange", route);
-function route() {
-  if (!session) return;
-  const [type, id] = location.hash.slice(1).split("/");
-  if (type === "run" && id) openRun(decodeURIComponent(id));
-  else if (type === "case" && id) openCase(decodeURIComponent(id));
-  else renderEmpty();
-}
-function renderEmpty() {
-  current = null;
-  $("view").innerHTML = `<div class="card empty">Start a case on the left. You'll watch the agents work live, get the appeal packet,
-    and then manage the case: approve what gets sent, answer the insurer, and confirm the outcome.</div>`;
-}
-async function loadEvents(col, id) {
-  const {data} = await sb.from("events").select("*").eq(col, id).order("id").limit(2000);
-  return data || [];
-}
-
-// ---- run view ------------------------------------------------------------------------------
-async function openRun(id) {
-  current = {type: "run", id, events: []};
-  renderLists();
-  $("view").innerHTML = `<div class="card"><div class="title-row" id="runHead"></div>
-    <div class="stages" id="stages">${PIPELINE.map((a) => `<span class="stage" data-a="${a}" style="--c:${AGENTS[a][1]}">${AGENTS[a][0]}</span>`).join("")}</div>
-    <div class="log" id="log"></div></div>`;
-  renderRunHead();
-  const events = await loadEvents("run_id", id);
-  if (current?.id !== id) return;
-  const seen = new Set(current.events.map((e) => e.id));
-  current.events = [...events, ...current.events.filter((e) => !events.some((x) => x.id === e.id))];
-  $("log").innerHTML = "";
-  current.events.forEach(appendRow);
-  paintStages();
-  if (!events.length && !runs.find((r) => r.id === id)) $("log").innerHTML = `<div class="dim">Starting the worker… the first agent appears in a few seconds.</div>`;
-}
-function renderRunHead() {
-  const r = runs.find((x) => x.id === current.id) || {case_name: current.id, status: "starting"};
-  const c = cases.find((x) => x.run_id === current.id);
-  $("runHead").innerHTML = `<h2>${esc(r.case_name)} <span class="pill ${esc(r.status)}">${esc(r.status)}</span>
-      ${r.verdict ? `<span class="pill ${esc(r.verdict)}">verdict: ${esc(r.verdict)}</span>` : ""}</h2>
-    <div class="toolbar">${r.packet_path ? `<button class="primary" id="packetBtn">Open appeal packet</button>` : ""}
-      ${c ? `<button id="toCase">Go to the case →</button>` : ""}</div>`;
-  if (r.packet_path) $("packetBtn").onclick = () => openPacket(r.packet_path);
-  if (c) $("toCase").onclick = () => { location.hash = "case/" + c.id; };
-}
-function appendRow(e) {
-  const log = $("log") || $("caseLog");
-  if (!log) return;
-  if (log.firstElementChild?.classList.contains("dim")) log.innerHTML = "";
-  const [name, color] = AGENTS[e.agent] || [e.agent, "#9ca3af"];
-  const div = document.createElement("div");
-  div.className = "row " + e.kind;
-  div.style.setProperty("--c", color);
-  div.innerHTML = `<span class="t">${fmtTime(e.ts)}</span><span class="a">${esc(name)}</span><span class="k">${MARK[e.kind] || "·"}</span><span class="m"></span>`;
-  div.querySelector(".m").textContent = e.message;
-  const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
-  log.appendChild(div);
-  if (atBottom) log.scrollTop = log.scrollHeight;
-}
-function paintStages() {
-  const state = {};
-  for (const e of current.events) {
-    if (!PIPELINE.includes(e.agent)) continue;
-    if (e.kind === "start") state[e.agent] = "working";
-    else if (e.kind === "done" || e.kind === "handoff") state[e.agent] = "done";
-    else if (e.kind === "retry") state[e.agent] = "retry";
-    else if (e.kind === "error") state[e.agent] = "error";
+// ---- one appeal ---------------------------------------------------------------------------------
+async function openAppeal(id) {
+  renderAppeal();
+  if (!eventsByRun[id]) {
+    eventsByRun[id] = [];
+    const {data} = await sb.from("events").select("agent,kind,message,run_id,ts").eq("run_id", id).order("id").limit(3000);
+    eventsByRun[id] = [...(data || []), ...eventsByRun[id]];
+    if (view.id === id) renderAppeal();
   }
-  document.querySelectorAll("#stages .stage").forEach((s) => { s.className = "stage " + (state[s.dataset.a] || ""); });
+}
+function stepStates(id) {
+  const st = {};
+  for (const e of eventsByRun[id] || []) {
+    if (e.kind === "start") st[e.agent] = st[e.agent] === "done" ? "done" : "doing";
+    if (e.kind === "done" || e.kind === "handoff") st[e.agent] = "done";
+  }
+  return st;
+}
+function renderAppeal() {
+  const run = runs.find((r) => r.id === view.id);
+  const el = $("appeal");
+  if (!run) { el.innerHTML = `<a class="back" href="#">‹ Back to your appeals</a><div class="card empty"><h2>We can't find this appeal</h2>
+    <p>It may have been deleted.</p><a class="btn primary" href="#">See your appeals</a></div>`; return; }
+  const c = caseFor(run), d = c?.data || {}, s = stateOf(run);
+  const head = `<a class="back" href="#">‹ Back to your appeals</a>
+    <div class="appeal-head"><h1>${esc(titleFor(run.case_name))}</h1>
+      <p class="meta">${[d.insurer_name, d.claim_number && "Claim " + d.claim_number, "Started " + longDate(run.created_at)].filter(Boolean).map(esc).join(" · ")}</p></div>`;
+
+  if (!c && run.status !== "failed") {  // still being prepared
+    const st = stepStates(run.id), anyDoing = STEPS.some(([a]) => st[a] === "doing");
+    const firstTodo = STEPS.findIndex(([a]) => st[a] !== "done");
+    el.innerHTML = head + `<div class="banner work"><h2>We're preparing your appeal</h2>
+      <p>This usually takes ${run.mode === "live" ? "about 10 minutes" : "about a minute"}. You can leave this page; we'll keep working and save everything here.</p>
+      <ol class="steps">${STEPS.map(([a, lbl, sub], i) => {
+        const cls = st[a] === "done" ? "done" : st[a] === "doing" || (!anyDoing && i === firstTodo) ? "doing" : "todo";
+        return `<li class="${cls}"><span class="ic" aria-hidden="true">${cls === "done" ? "✓" : cls === "doing" ? "" : i + 1}</span>
+          <span class="lbl">${esc(lbl)}${sub ? `<span class="sub">${esc(sub)}</span>` : ""}
+          <span class="sr-only" style="position:absolute;left:-9999px">${cls === "done" ? "done" : cls === "doing" ? "in progress" : "not started"}</span></span></li>`;
+      }).join("")}</ol></div>
+      ${run.packet_path ? `<p style="margin-top:18px"><button class="btn" id="packetBtn">Open your appeal packet</button></p>` : ""}`;
+    if ($("packetBtn")) $("packetBtn").onclick = () => openPacket(run.packet_path);
+    return;
+  }
+  if (run.status === "failed") {
+    el.innerHTML = head + `<div class="banner bad"><h2>Something went wrong</h2><p>We couldn't finish preparing this appeal. Nothing was sent. Please start it again.</p>
+      <p style="margin-top:8px"><a class="btn primary" href="#new">Start again</a></p></div>`;
+    return;
+  }
+
+  const mine = (d.tasks || []).filter((t) => t.status === "open" && t.owner === "user");
+  const v = VERDICT[run.verdict];
+  const letters = (d.outbox || []).slice();
+  const msgs = (d.correspondence || []).slice().reverse();
+  const dates = (d.deadlines || []);
+  el.innerHTML = head + `
+    <div class="banner ${s.cls}" role="status"><h2>${esc(s.label)}</h2><p>${esc(s.next)}</p></div>
+
+    ${mine.length ? `<h2 class="section-title">What we need from you</h2><div class="stack">${mine.map((t) => todoCard(t, d)).join("")}</div>` : ""}
+
+    ${c.status === "closed" && d.outcome ? `<h2 class="section-title">How it ended</h2><div class="card">
+      <p style="font-size:20px"><b>${d.outcome.result === "upheld" ? "Your insurer kept the denial." : "Your insurer approved your claim."}</b></p>
+      ${d.outcome.quote ? `<p class="quote" style="margin-top:10px">Your insurer wrote: <b>“${esc(d.outcome.quote)}”</b></p>` : ""}
+      <p class="muted small" style="margin-top:10px">You confirmed this on ${esc(longDate(d.outcome.confirmed))}.</p></div>` : ""}
+
+    ${v ? `<h2 class="section-title">Our honest assessment</h2><div class="card verdict ${esc(run.verdict)}">
+      <span class="badge" aria-hidden="true">${v.icon}</span><h3>${esc(v.title)}</h3><p class="muted">${esc(v.text)}</p></div>` : ""}
+
+    <h2 class="section-title">Your letters</h2>
+    <div class="letters">
+      ${run.packet_path ? `<div class="letter-row"><div><b>Your appeal packet</b><p class="muted small">Everything in one place: the letter, the evidence, deadlines and a checklist.</p></div>
+        <button class="btn" id="packetBtn">Open</button></div>` : ""}
+      ${letters.map((o) => {
+        const pending = o.status === "awaiting_approval";
+        const name = o.kind === "initial_appeal" ? "Your appeal letter" : "Your reply with the documents";
+        return `<div class="letter-row"><div><b>${name}</b><p class="small ${pending ? "" : "muted"}">${pending
+          ? `<span class="status attn">Ready for you to check</span>` : `Sent ${esc(longDate(o.sent || o.created))}`}</p></div>
+          <button class="btn ${pending ? "primary" : ""}" data-letter="${esc(o.id)}">${pending ? "Read and send" : "Read"}</button></div>`;
+      }).join("")}
+    </div>
+
+    ${msgs.length ? `<h2 class="section-title">Messages with your insurer</h2><ul class="timeline">${msgs.map((m) => m.direction === "out"
+      ? `<li><span class="who">You sent: ${esc(m.subject)}</span><br><span class="when">${esc(longDate(m.date))}</span></li>`
+      : `<li><span class="who">${esc(d.insurer_name || "Your insurer")} wrote</span>
+          ${m.analysis?.message_type ? `<span class="kind">${esc(MSG_KIND[m.analysis.message_type] || "Message")}</span>` : ""}
+          ${m.simulated ? `<span class="practice">(practice message)</span>` : ""}
+          <br><span class="when">${esc(m.date ? longDate(m.date) : "")}</span>
+          ${m.analysis?.summary ? `<p style="margin-top:8px">${esc(m.analysis.summary.replace(/\s*The email (is|was) (labell?ed|marked)[^.]*\.?/i, ""))}</p>` : `<p class="muted" style="margin-top:8px">We're reading this message.</p>`}</li>`).join("")}</ul>` : ""}
+
+    ${dates.length ? `<h2 class="section-title">Important dates</h2><div class="dates">${dates.map((x) => `<div class="date-row">
+      <span class="d">${esc(dueText(x.date))}</span><span>${esc(x.label)}${x.confirmed ? "" : ` <span class="muted small">(from your insurer's letter)</span>`}</span></div>`).join("")}</div>` : ""}
+
+    ${c.status !== "closed" ? `<details class="demo"><summary>Demo controls: pretend to be the insurer</summary>
+      <p class="small muted" style="margin-top:10px">These send a practice email, clearly labelled as practice, to this appeal's inbox, so you can see how ClaimBack handles each kind of reply.</p>
+      <div class="btns">${[["ack", "Insurer confirms they got it"], ["evidence-request", "Insurer asks for more information"],
+        ["overturned", "Insurer approves the claim"], ["upheld", "Insurer keeps the denial"]].map(([k, l]) =>
+        `<button class="btn" data-scene="${k}">${l}</button>`).join("")}</div></details>` : ""}`;
+
+  if ($("packetBtn")) $("packetBtn").onclick = () => openPacket(run.packet_path);
+  el.querySelectorAll("[data-letter]").forEach((b) => b.onclick = () => openLetter(b.dataset.letter));
+  el.querySelectorAll("[data-scene]").forEach((b) => b.onclick = () => caseAction(b, "simulate", {scene: b.dataset.scene}));
+  el.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = async () => {
+    if (!(await confirmAsk("Close this appeal?", "We'll record your insurer's decision and mark the appeal as finished.", "Yes, close it"))) return;
+    caseAction(b, "confirm", {task_id: b.dataset.confirm});
+  });
+  el.querySelectorAll("[data-upload]").forEach((input) => input.onchange = () => uploadFile(input));
+  if ($("letterDlg").open && view.letter) openLetter(view.letter, true);
+}
+function todoCard(t, d) {
+  if (t.kind === "approve_send") return `<div class="todo-card"><h3>Read your letter and send it</h3>
+    <p class="muted">Take your time. Nothing is sent until you say so.</p>
+    <div class="actions"><button class="btn primary" data-letter="${esc(t.outbox_id)}">Read your letter</button></div></div>`;
+  if (t.kind === "upload_evidence") return `<div class="todo-card"><h3>Send us ${esc(lowerFirst(itemName(t.title)))}</h3>
+    ${t.due_date ? `<p class="due">Due ${esc(dueText(t.due_date))}</p>` : ""}
+    ${t.quote ? `<p class="quote">Your insurer wrote: <b>“${esc(t.quote)}”</b></p>` : ""}
+    <p class="muted small">${t.supplier === "provider" ? "Ask your doctor's office for this. " : ""}A PDF or text file works.</p>
+    <div class="actions"><label class="btn primary">Choose a file<input type="file" accept=".pdf,.txt,.md" data-upload="${esc(t.id)}" hidden></label></div></div>`;
+  if (t.kind === "confirm_outcome") return `<div class="todo-card"><h3>Your insurer made a decision</h3>
+    ${t.quote ? `<p class="quote">They wrote: <b>“${esc(t.quote)}”</b></p>` : ""}
+    <p class="muted">If that matches the letter you received, confirm it and we'll close your appeal.</p>
+    <div class="actions"><button class="btn good" data-confirm="${esc(t.id)}">Yes, that's right</button></div></div>`;
+  return `<div class="todo-card"><h3>${esc(t.title)}</h3><p class="muted">Please look at the latest message from your insurer below.</p></div>`;
+}
+async function caseAction(btn, action, body) {
+  const c = caseFor(runs.find((r) => r.id === view.id));
+  if (!c) return;
+  btn.disabled = true;
+  try { const {job_id} = await api(`/cases/${encodeURIComponent(c.id)}/${action}`, body); return job_id; }
+  catch (e) { toast(friendlyError(e.message), true); }
+  finally { setTimeout(() => { btn.disabled = false; }, 4000); }
+}
+async function uploadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const path = `${session.user.id}/${Date.now()}-${file.name.replace(/[^A-Za-z0-9._-]/g, "_")}`;
+  toast(`Uploading ${file.name}…`);
+  const {error} = await sb.storage.from("uploads").upload(path, file, {contentType: file.type || "text/plain"});
+  if (error) return toast("We couldn't upload that file. Please try again.", true);
+  await caseAction(input.closest(".todo-card").querySelector(".btn"), "upload", {task_id: input.dataset.upload, path});
 }
 async function openPacket(path) {
   const {data, error} = await sb.storage.from("packets").download(path);
-  if (error) return toast(error.message, true);
+  if (error) return toast("We couldn't open the packet. Please try again.", true);
   const html = await data.text();
   $("packetFrame").srcdoc = html;
   $("packetDownload").onclick = () => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([html], {type: "text/html"}));
-    a.download = "appeal_packet.html"; a.click();
+    a.download = "appeal-packet.html"; a.click();
   };
   $("packetDlg").showModal();
 }
-$("packetClose").onclick = () => $("packetDlg").close();
 
-// ---- case view -------------------------------------------------------------------------------
-async function openCase(id) {
-  current = {type: "case", id, events: []};
-  renderLists();
-  $("view").innerHTML = `<div class="card" id="caseCard"></div><div class="card"><h2>Case timeline</h2><div class="log" id="caseLog"></div></div>`;
-  renderCase();
-  const events = await loadEvents("case_id", id);
-  if (current?.id !== id) return;
-  current.events = [...events, ...current.events.filter((e) => !events.some((x) => x.id === e.id))];
-  $("caseLog").innerHTML = "";
-  current.events.forEach(appendRow);
+// ---- reading, filling in and sending a letter -------------------------------------------------------
+function openLetter(outboxId, keepMode = false) {
+  const run = runs.find((r) => r.id === view.id), c = caseFor(run);
+  const o = (c?.data?.outbox || []).find((x) => x.id === outboxId);
+  if (!o) return;
+  const pending = o.status === "awaiting_approval";
+  const mode = keepMode ? view.letterMode : "read";
+  view.letter = outboxId; view.letterMode = mode;
+  const blanks = blanksIn(o.body);
+  const notes = o.reviewer_notes || [];
+  const uploads = Object.fromEntries((c.data.uploads || []).map((u) => [u.id, u.name]));
+  $("letterTitle").textContent = o.kind === "initial_appeal" ? "Your appeal letter" : "Your reply with the documents";
+  const body = $("letterBody"), foot = $("letterFoot");
+  if (mode === "fill") {
+    // One plain box per blank: no need to touch the rest of the letter
+    body.innerHTML = `<p>Type what should go in each blank. The rest of the letter stays as it is.</p>
+      ${blanks.map((b, i) => `<label class="field"><span style="font-weight:700">${i + 1}. ${esc(blankLabel(b))}</span>
+        <textarea rows="2" data-blank="${i}" placeholder="Type here"></textarea></label>`).join("")}
+      <p class="small muted">Leave a box empty to keep it as a blank for now.
+        <button class="linkbtn" id="fullEdit">Edit the whole letter instead</button></p>`;
+    foot.innerHTML = `<button class="btn" id="cancelEdit">Cancel</button><button class="btn primary" id="saveEdit">Save</button>`;
+    $("fullEdit").onclick = () => { view.letterMode = "edit"; openLetter(outboxId, true); };
+    $("cancelEdit").onclick = () => { view.letterMode = "read"; openLetter(outboxId, true); };
+    $("saveEdit").onclick = async () => {
+      let text = o.body || "";
+      body.querySelectorAll("[data-blank]").forEach((ta) => {
+        const value = ta.value.trim();
+        if (value) text = text.split(blanks[+ta.dataset.blank]).join(value);
+      });
+      const btn = $("saveEdit"); btn.disabled = true; btn.textContent = "Saving…";
+      const job = await caseAction(btn, "edit", {outbox_id: outboxId, body: text});
+      if (!job) { btn.disabled = false; btn.textContent = "Save"; return; }
+      pendingJobs[job] = () => { view.letterMode = "read"; openLetter(outboxId, true); };
+    };
+  } else if (mode === "edit") {
+    const typed = keepMode && $("editor") ? $("editor").value : (o.body || "");
+    body.innerHTML = `<p class="muted">Change anything you like. Words in [SQUARE BRACKETS] are blanks for you to fill in.</p>
+      <label class="field"><span style="font-weight:700">Letter text</span><textarea class="editor" id="editor"></textarea></label>`;
+    $("editor").value = typed;
+    foot.innerHTML = `<button class="btn" id="cancelEdit">Cancel</button><button class="btn primary" id="saveEdit">Save my changes</button>`;
+    $("cancelEdit").onclick = () => { view.letterMode = "read"; openLetter(outboxId, true); };
+    $("saveEdit").onclick = async () => {
+      const btn = $("saveEdit"); btn.disabled = true; btn.textContent = "Saving…";
+      const job = await caseAction(btn, "edit", {outbox_id: outboxId, body: $("editor").value});
+      if (!job) { btn.disabled = false; btn.textContent = "Save my changes"; return; }
+      pendingJobs[job] = () => { view.letterMode = "read"; openLetter(outboxId, true); };
+    };
+  } else {
+    body.innerHTML = `
+      ${pending ? `<div class="sendto">When you send it, we'll email this letter to <b>${esc(o.to)}</b>, your insurer's address for this appeal.</div>` : `<p class="muted">Sent on ${esc(longDate(o.sent || o.created))} to ${esc(o.to)}.</p>`}
+      ${pending && blanks.length ? `<div class="blanks"><b>Please fill in ${blanks.length === 1 ? "this blank" : "these blanks"} before sending:</b>
+        <ul>${blanks.map((b) => `<li>${esc(blankLabel(b))}</li>`).join("")}</ul>
+        <p class="small" style="margin-top:8px">They're highlighted in the letter below.</p></div>` : ""}
+      ${(o.attachments || []).length ? `<div><b>Sent with:</b> <span class="attach">${o.attachments.map((u) => `<span>📎 ${esc(uploads[u] || u)}</span>`).join("")}</span></div>` : ""}
+      ${pending && notes.length ? `<details class="notes"><summary>Notes from ClaimBack for you (not part of the letter)</summary>${notes.map((n) => `<div>${esc(n.replace(/\*\*/g, ""))}</div>`).join("")}</details>` : ""}
+      <div class="letter-text">${renderLetter(o.body)}</div>`;
+    foot.innerHTML = pending
+      ? `<button class="btn" id="editBtn">${blanks.length ? "Fill in the blanks" : "Make changes"}</button>
+         <button class="btn good" id="sendBtn" ${blanks.length ? "disabled" : ""}>Send this letter</button>`
+      : `<button class="btn primary" data-close-letter>Close</button>`;
+    if (pending) {
+      $("editBtn").onclick = () => { view.letterMode = blanks.length ? "fill" : "edit"; openLetter(outboxId, true); };
+      $("sendBtn").onclick = async () => {
+        if (!(await confirmAsk("Send this letter now?", `We'll email it to ${o.to}. Once it's sent, it can't be taken back.`, "Yes, send it"))) return;
+        const btn = $("sendBtn"); btn.disabled = true; btn.textContent = "Sending…";
+        const job = await caseAction(btn, "approve", {outbox_id: outboxId});
+        if (job) pendingJobs[job] = (j) => { if (j.status === "done") $("letterDlg").close(); };
+      };
+    } else foot.querySelector("[data-close-letter]").onclick = () => $("letterDlg").close();
+  }
+  if (!$("letterDlg").open) $("letterDlg").showModal();
 }
-function renderCase() {
-  const row = cases.find((c) => c.id === current.id);
-  const card = $("caseCard");
-  if (!card) return;
-  if (!row) { card.innerHTML = `<div class="empty">Case not found.</div>`; return; }
-  const c = row.data;
-  const run = runs.find((r) => r.id === row.run_id);
-  const userTasks = (c.tasks || []).filter((t) => t.status === "open" && t.owner === "user");
-  const drafts = (c.outbox || []).filter((o) => o.status === "awaiting_approval");
-  card.innerHTML = `
-    <div class="title-row"><h2>${esc(c.case_name)} <span class="pill ${esc(row.status)}">${esc(label(row.status))}</span></h2>
-      <div class="toolbar">${run?.packet_path ? `<button id="casePacket">Appeal packet</button>` : ""}
-        <button id="toRun">Agent run</button></div></div>
-    <p class="muted" style="margin:6px 0 0;font-size:13px">${esc(c.insurer_name)} · claim ${esc(c.claim_number)} · stage: ${esc(label(c.stage))}
-      · insurer replies go to <span class="mono">${esc(c.reply_address)}</span></p>
-    ${userTasks.length ? `<div class="waiting"><b>Waiting for you</b>${userTasks.map((t) => `<div class="task"><span>${esc(t.title)}
-      ${t.due ? `<span class="pill awaiting_human">due ${esc(t.due)}</span>` : ""}</span><span class="toolbar">${taskAction(t)}</span></div>`).join("")}</div>` : ""}
-    ${drafts.map((o) => `<div class="draft"><div class="meta"><span>Draft ${esc(o.id)} · to <b class="mono">${esc(o.to)}</b> · ${esc(o.subject)}
-      ${(o.attachments || []).length ? ` · attaches ${esc(o.attachments.join(", "))}` : ""}</span>
-      <button class="go small" data-approve="${esc(o.id)}">Approve &amp; send</button></div><pre></pre></div>`).join("")}
-    <h3>Correspondence</h3>
-    ${(c.correspondence || []).length ? c.correspondence.map((m) => `<div class="mail">${m.direction === "in" ? "⬇" : "⬆"}
-      <b>${esc(m.subject)}</b> <span class="dim">${esc(m.direction === "in" ? "from " + m.from : "to " + m.to)}</span>
-      ${m.simulated ? `<span class="sim">· simulated insurer</span>` : ""}
-      ${m.analysis?.summary ? `<div class="muted">${esc(m.analysis.message_type ? label(m.analysis.message_type) + ": " : "")}${esc(m.analysis.summary)}</div>` : ""}</div>`).join("")
-      : `<p class="dim">Nothing sent yet. Approve the first letter to send the appeal.</p>`}
-    ${row.status !== "closed" ? `<h3>Demo: play the insurer</h3><p class="muted" style="font-size:13px;margin:0 0 8px">Sends a clearly
-      labelled simulated insurer email to this case's reply address. The Correspondence agent reads it like real mail.</p>
-      <div class="toolbar">${SCENES.map(([k, v]) => `<button class="small" data-scene="${k}">${v}</button>`).join("")}</div>` : ""}
-    ${c.outcome ? `<h3>Outcome</h3><p>${esc(c.outcome.result)} (confirmed by ${esc(c.outcome.confirmed_by)})</p>` : ""}`;
-  card.querySelectorAll(".draft").forEach((d, i) => { d.querySelector("pre").textContent = drafts[i].body || "(draft text unavailable)"; });
-  card.querySelectorAll("[data-approve]").forEach((b) => b.onclick = () => caseAction(b, "approve", {outbox_id: b.dataset.approve},
-    `Send draft ${b.dataset.approve} to ${drafts.find((o) => o.id === b.dataset.approve).to}?`));
-  card.querySelectorAll("[data-scene]").forEach((b) => b.onclick = () => caseAction(b, "simulate", {scene: b.dataset.scene}));
-  card.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = () => caseAction(b, "confirm", {task_id: b.dataset.confirm},
-    "Confirm the insurer's decision and close the case?"));
-  card.querySelectorAll("[data-upload]").forEach((input) => input.onchange = () => uploadEvidence(input));
-  if ($("casePacket")) $("casePacket").onclick = () => openPacket(run.packet_path);
-  $("toRun").onclick = () => { location.hash = "run/" + row.run_id; };
-}
-function taskAction(t) {
-  if (t.kind === "upload_evidence") return `<label class="small"><input type="file" accept=".pdf,.txt,.md" data-upload="${esc(t.id)}" style="width:auto"></label>`;
-  if (t.kind === "confirm_outcome") return `<button class="go small" data-confirm="${esc(t.id)}">Confirm outcome</button>`;
-  if (t.kind === "approve_send") return `<span class="dim">see the draft below</span>`;
-  return "";
-}
-async function caseAction(btn, action, body, question) {
-  if (question && !confirm(question)) return;
-  btn.disabled = true;
-  try { await api(`/cases/${encodeURIComponent(current.id)}/${action}`, body); toast("Working on it…"); }
-  catch (e) { toast(e.message, true); }
-  finally { setTimeout(() => { btn.disabled = false; }, 4000); }
-}
-async function uploadEvidence(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const path = `${session.user.id}/${Date.now()}-${file.name.replace(/[^A-Za-z0-9._-]/g, "_")}`;
-  const {error} = await sb.storage.from("uploads").upload(path, file, {contentType: file.type || "text/plain"});
-  if (error) return toast(error.message, true);
-  try { await api(`/cases/${encodeURIComponent(current.id)}/upload`, {task_id: input.dataset.upload, path}); toast("Uploaded. The Writer and Fact Checker are drafting the reply."); }
-  catch (e) { toast(e.message, true); }
-}
+$("letterDlg").addEventListener("close", () => { view.letter = null; });
 
-// ---- start a run ------------------------------------------------------------------------------
-$("startBtn").onclick = async () => {
-  const btn = $("startBtn");
-  const src = document.querySelector("input[name=src]:checked").value;
-  const mode = document.querySelector("input[name=mode]:checked").value;
-  btn.disabled = true;
-  try {
-    const body = {mode};
-    if (src === "sample") body.sample = $("sample").value;
-    else {
-      const files = [...$("files").files];
-      if (!files.length) throw new Error("Choose your .txt documents first.");
-      for (const f of files) {
-        if (!(await f.text()).includes("SYNTHETIC TEST DOCUMENT"))
-          throw new Error(`${f.name} isn't marked SYNTHETIC TEST DOCUMENT. The hosted demo takes synthetic cases only.`);
-      }
-      body.uploads = [];
-      for (const f of files) {
-        const path = `${session.user.id}/${Date.now()}-${f.name.replace(/[^A-Za-z0-9._-]/g, "_")}`;
-        const {error} = await sb.storage.from("uploads").upload(path, f, {contentType: "text/plain"});
-        if (error) throw error;
-        body.uploads.push(path);
-      }
-    }
-    const {run_id} = await api("/runs", body);
-    location.hash = "run/" + run_id;
-    if (mode === "live") loadConfig();
-  } catch (e) { toast(e.message, true); }
-  finally { btn.disabled = false; }
-};
-
-sb.auth.getSession().then(({data}) => { if (!data.session) { $("auth").hidden = false; } });
+// onAuthStateChange fires once on load with the saved session (and boots); only the signed-out case needs a render here
+sb.auth.getSession().then(({data}) => { if (!data.session) render(); });
 </script>
 </body>
 </html>

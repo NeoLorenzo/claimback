@@ -6,7 +6,8 @@ import shutil
 from pathlib import Path
 
 from .. import llm, orchestrator
-from ..cases import CASEFILES_DIR, ActionRefused, Case, add_upload, all_cases, approve_outbox, confirm_outcome, open_case
+from ..cases import (CASEFILES_DIR, ActionRefused, Case, add_upload, all_cases, approve_outbox, confirm_outcome,
+                     open_case, update_outbox)
 from ..export import ExportRefused, _check_synthetic
 from ..state import RUNS_DIR
 from . import bridge
@@ -93,6 +94,11 @@ def open_case_for_run(run_id: str) -> str | None:
 def approve(owner: str, case_id: str, outbox_id: str) -> str:
     _own_case(owner, case_id)
     return approve_outbox(case_id, outbox_id)
+
+
+def edit(owner: str, case_id: str, outbox_id: str, body: str) -> dict:
+    _own_case(owner, case_id)
+    return update_outbox(case_id, outbox_id, body)
 
 
 def confirm(owner: str, case_id: str, task_id: str) -> None:

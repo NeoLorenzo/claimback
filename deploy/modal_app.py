@@ -104,6 +104,8 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
             result = {"message_id": ops.approve(owner, args["case_id"], args["outbox_id"])}
         elif kind == "confirm":
             ops.confirm(owner, args["case_id"], args["task_id"])
+        elif kind == "edit":
+            result = ops.edit(owner, args["case_id"], args["outbox_id"], args["body"])
         elif kind == "upload":
             path = args["path"]
             if not path.startswith(f"{owner}/"):
@@ -195,6 +197,7 @@ def api():
         task_id: str | None = None
         path: str | None = None
         scene: str | None = None
+        body: str | None = None
 
     @web.get("/health")
     def health():
@@ -239,11 +242,13 @@ def api():
     def case_action(case_id: str, action: str, req: CaseAction, authorization: str | None = Header(None)):
         user = caller(authorization)
         owner = user["id"]
-        need = {"approve": "outbox_id", "confirm": "task_id", "upload": "task_id", "simulate": "scene"}
+        need = {"approve": "outbox_id", "confirm": "task_id", "upload": "task_id", "simulate": "scene", "edit": "body"}
         if action not in need or not getattr(req, need[action]):
             raise HTTPException(400, "unknown action or missing field")
         if action == "upload" and not (req.path or "").startswith(f"{owner}/"):
             raise HTTPException(400, "invalid upload")
+        if action == "edit" and (not req.outbox_id or len(req.body or "") > 100_000):
+            raise HTTPException(400, "edit needs outbox_id and a body under 100,000 characters")
         if action == "simulate" and req.scene not in ("ack", "evidence-request", "overturned", "upheld"):
             raise HTTPException(400, "unknown scene")
         rows = sb.select("cases", {"id": f"eq.{case_id}", "owner": f"eq.{owner}", "select": "id"})
