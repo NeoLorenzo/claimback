@@ -20,6 +20,9 @@ button:hover:not(:disabled), select:hover { border-color: #3a4558; }
 button:disabled { opacity: .45; cursor: default; }
 button.primary { background: #1d4ed8; border-color: #2563eb; }
 button.go { background: #065f46; border-color: #059669; }
+[hidden] { display: none !important; }
+.static-note { color: var(--warn) !important; }
+.static-note a { color: var(--accent); }
 label.check { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
 
 header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between;
@@ -114,21 +117,23 @@ aside { display: flex; flex-direction: column; gap: 16px; }
   <div class="brand">
     <h1>Claim<span>Back</span></h1>
     <p>Insurance denial letter in, ready-to-send appeal packet out, built by a team of Claude agents</p>
+    <p id="staticNote" class="static-note" hidden>Recorded run with synthetic patient data, replayed from its real agent log.
+      <a href="https://github.com/NeoLorenzo/claimback">Source on GitHub</a></p>
   </div>
   <div class="controls">
     <select id="runSel" aria-label="Run"></select>
-    <button id="liveBtn">Watch live</button>
+    <button id="liveBtn" class="live-only">Watch live</button>
     <button id="replayBtn" class="primary">Replay</button>
     <select id="speedSel" aria-label="Replay speed">
       <option value="1">1×</option><option value="5">5×</option><option value="10" selected>10×</option>
       <option value="25">25×</option><option value="60">60×</option>
     </select>
     <button id="pauseBtn" disabled>Pause</button>
-    <span class="sep"></span>
-    <select id="caseSel" aria-label="Case"></select>
-    <label class="check"><input type="checkbox" id="chaosChk" checked> chaos</label>
-    <label class="check"><input type="checkbox" id="mockChk"> mock</label>
-    <button id="startBtn" class="go">Start run</button>
+    <span class="sep live-only"></span>
+    <select id="caseSel" class="live-only" aria-label="Case"></select>
+    <label class="check live-only"><input type="checkbox" id="chaosChk" checked> chaos</label>
+    <label class="check live-only"><input type="checkbox" id="mockChk"> mock</label>
+    <button id="startBtn" class="go live-only">Start run</button>
   </div>
 </header>
 
@@ -210,6 +215,13 @@ function stageText(stage) {
            factcheck: `Fact Checker is verifying every claim in draft ${m[2]}` }[m[1]];
 }
 const $ = (id) => document.getElementById(id);
+// Static mode (GitHub Pages): replay recorded runs only; live runs need the local server
+const STATIC = !["127.0.0.1", "localhost"].includes(location.hostname) || new URLSearchParams(location.search).has("static");
+const API = {
+  runs: () => STATIC ? "data/runs.json" : "/api/runs",
+  events: (id) => STATIC ? `data/runs/${id}/events.json` : `/api/runs/${id}/events`,
+  packet: (id) => STATIC ? `data/runs/${id}/packet.html` : `/api/runs/${id}/packet`,
+};
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 // ---------- diagram ----------
@@ -395,7 +407,7 @@ function stopAll() {
   $("pauseBtn").disabled = true; $("pauseBtn").textContent = "Pause";
 }
 async function loadRuns(selectId) {
-  const runs = await (await fetch("/api/runs")).json();
+  const runs = await (await fetch(API.runs())).json();
   $("runSel").innerHTML = runs.map((r) =>
     `<option value="${esc(r.id)}">${esc(r.id)} · ${esc(r.status)}${r.has_packet ? " · packet" : ""}</option>`).join("")
     || `<option value="">no runs yet</option>`;
@@ -404,7 +416,7 @@ async function loadRuns(selectId) {
 }
 async function showFinal(id) {
   stopAll(); resetState(); runId = id;
-  const { events, status } = await (await fetch(`/api/runs/${id}/events`)).json();
+  const { events, status } = await (await fetch(API.events(id))).json();
   for (const e of events) apply(e);
   $("modeTxt").textContent = `${status} · ${events.length} events`;
   if (!S.packet && status !== "running") setNow(status === "failed" ? "Run failed: resume it from the terminal" : `Run ${status}`, false);
@@ -426,7 +438,7 @@ function watchLive(id) {
 }
 async function replay(id) {
   stopAll(); resetState(); runId = id;
-  const { events } = await (await fetch(`/api/runs/${id}/events`)).json();
+  const { events } = await (await fetch(API.events(id))).json();
   queue = events.slice();
   $("pauseBtn").disabled = false;
   const step = () => {
@@ -451,7 +463,7 @@ async function replay(id) {
 $("runSel").onchange = () => { const r = $("runSel").value; if (r) showFinal(r); };
 $("liveBtn").onclick = () => { const r = $("runSel").value; if (r) watchLive(r); };
 $("replayBtn").onclick = () => { const r = $("runSel").value; if (r) replay(r); };
-$("packetBtn").onclick = () => runId && window.open(`/api/runs/${runId}/packet`, "_blank");
+$("packetBtn").onclick = () => runId && window.open(API.packet(runId), "_blank");
 $("startBtn").onclick = async () => {
   $("startBtn").disabled = true;
   try {
@@ -470,6 +482,13 @@ $("startBtn").onclick = async () => {
 
 (async () => {
   resetState();
+  if (STATIC) {
+    for (const el of document.querySelectorAll(".live-only")) el.hidden = true;
+    $("staticNote").hidden = false;
+    const runs = await loadRuns();
+    if (runs.length) replay(runs[0].id);  // visitors land on the recording already playing
+    return;
+  }
   const cases = await (await fetch("/api/cases")).json();
   $("caseSel").innerHTML = cases.map((c) => `<option>${esc(c)}</option>`).join("");
   const runs = await loadRuns();

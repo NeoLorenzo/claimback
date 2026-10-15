@@ -6,6 +6,7 @@
   python -m claimback resume <run_id>                 # continue from the last checkpoint
   python -m claimback purge <run_id>                  # delete a run and its identifier map
   python -m claimback serve                           # live agent timeline + replay at http://127.0.0.1:8765
+  python -m claimback export-site <run_id> [...]      # static replay site in docs/ (GitHub Pages)
 """
 import argparse
 import os
@@ -32,7 +33,20 @@ def main() -> int:
     d.add_argument("run_id")
     v = sub.add_parser("serve", help="web view: live agent timeline and replay")
     v.add_argument("--port", type=int, default=8765)
+    x = sub.add_parser("export-site", help="export finished synthetic runs as a static replay site")
+    x.add_argument("run_ids", nargs="+")
+    x.add_argument("--out", type=Path, default=Path(__file__).resolve().parent.parent / "docs")
     args = p.parse_args()
+
+    if args.cmd == "export-site":
+        from .export import ExportRefused, export_site
+        try:
+            out = export_site(args.run_ids, args.out)
+        except ExportRefused as e:
+            print(f"export refused: {e}")
+            return 1
+        print(f"exported {len(args.run_ids)} run(s) to {out}")
+        return 0
 
     if args.cmd == "serve":
         from .server import serve

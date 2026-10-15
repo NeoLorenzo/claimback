@@ -86,6 +86,16 @@ python -m claimback serve      # http://127.0.0.1:8765
 
 A live agent timeline: the workflow diagram lights up as agents work, handoffs and revision loops animate, and stats (tokens, cost, reviewer score, claims verified, failures recovered) update as the run goes. **Start run** launches a run from the page (tick *mock* to rehearse without API calls). **Replay** plays a finished run back at 1–60× speed for a recording. Idle gaps, like the wait before a resume, are skipped. The server binds to localhost only.
 
+### Public replay (GitHub Pages)
+
+**https://neolorenzo.github.io/claimback/** replays a recorded real run from its agent log, with a link to the finished appeal packet. Pages hosts static files only, so live runs need the local server. To publish a new recording:
+
+```bash
+python -m claimback export-site <run_id>   # writes docs/; re-run after changing the web page
+```
+
+The export refuses any case whose documents aren't marked `SYNTHETIC TEST DOCUMENT`, so real patient data can't be published. It also strips local file paths from the log.
+
 Output: `runs/<run_id>/output/appeal_packet.html` (printable) and `.md`, plus `events.jsonl` (the full agent log) and `state.json` (the checkpoints).
 
 ### How the pieces map to code
