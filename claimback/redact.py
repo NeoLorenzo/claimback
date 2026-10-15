@@ -9,25 +9,35 @@ EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
 
 
-def build_map(scan: PHIScan, docs: dict[str, str]) -> dict[str, str]:
-    """Return {original_text: placeholder}. Longest strings first, so a full
-    name is replaced before a surname on its own."""
+def build_map(scan: PHIScan, docs: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
+    """Return ({original_text: placeholder}, {placeholder: display_value}).
+    Every spelling of the same identifier ('Dr. Jane Roe, MD', 'Jane Roe')
+    shares one placeholder, so agents don't mistake variants for different
+    people. Display values are the canonical form used when filling back in."""
     mapping: dict[str, str] = {}
+    display: dict[str, str] = {}
+    by_canonical: dict[tuple[str, str], str] = {}
     counters: dict[str, int] = {}
-    entities = sorted(scan.entities, key=lambda e: len(e.text), reverse=True)
-    for ent in entities:
+
+    def placeholder_for(category: str, canonical: str) -> str:
+        key = (category, canonical.casefold())
+        if key not in by_canonical:
+            counters[category] = counters.get(category, 0) + 1
+            by_canonical[key] = f"[{category}_{counters[category]}]"
+            display[by_canonical[key]] = canonical
+        return by_canonical[key]
+
+    for ent in sorted(scan.entities, key=lambda e: len(e.text), reverse=True):
         text = ent.text.strip()
         if len(text) < 3 or text in mapping:
             continue
-        counters[ent.category] = counters.get(ent.category, 0) + 1
-        mapping[text] = f"[{ent.category}_{counters[ent.category]}]"
+        mapping[text] = placeholder_for(ent.category, (ent.refers_to or text).strip())
     # Deterministic backstop for patterns the model might miss
     for doc in docs.values():
         for m in EMAIL_RE.findall(doc) + SSN_RE.findall(doc):
             if m not in mapping:
-                counters["OTHER_IDENTIFIER"] = counters.get("OTHER_IDENTIFIER", 0) + 1
-                mapping[m] = f"[OTHER_IDENTIFIER_{counters['OTHER_IDENTIFIER']}]"
-    return mapping
+                mapping[m] = placeholder_for("OTHER_IDENTIFIER", m)
+    return mapping, display
 
 
 def apply(text: str, mapping: dict[str, str]) -> str:
@@ -43,7 +53,7 @@ def leaks(text: str, mapping: dict[str, str]) -> list[str]:
     return found
 
 
-def rehydrate(text: str, mapping: dict[str, str]) -> str:
-    for original, placeholder in mapping.items():
-        text = text.replace(placeholder, original)
+def rehydrate(text: str, display: dict[str, str]) -> str:
+    for placeholder, value in display.items():
+        text = text.replace(placeholder, value)
     return text

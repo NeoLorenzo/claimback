@@ -8,7 +8,7 @@ import markdown as md
 from . import redact
 
 
-def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, mapping, rounds, feedback=None) -> dict:
+def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, display, rounds, feedback=None) -> dict:
     out_dir = state.dir / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -17,8 +17,8 @@ def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, ma
     unsupported = [c for c in factcheck["checks"] if not c["supported"]]
     approved = review["decision"] == "approve" and not unsupported and not factcheck["untracked_claims"]
 
-    letter = redact.rehydrate(draft["letter_markdown"], mapping)
-    send_to = redact.rehydrate(f"{facts['appeals_mailing_address']} · Fax: {facts['appeals_fax']}", mapping)
+    letter = redact.rehydrate(draft["letter_markdown"], display)
+    send_to = redact.rehydrate(f"{facts['appeals_mailing_address']} · Fax: {facts['appeals_fax']}", display)
 
     lines = [
         "# Appeal packet",
@@ -42,7 +42,7 @@ def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, ma
         "",
         "- [ ] Read the whole letter and correct anything that is wrong",
         "- [ ] Sign and date the letter (and have the treating provider co-sign if possible)",
-        *[f"- [ ] Attach: {e}" for e in redact.rehydrate("\n".join(draft["enclosures"]), mapping).splitlines() if e],
+        *[f"- [ ] Attach: {e}" for e in redact.rehydrate("\n".join(draft["enclosures"]), display).splitlines() if e],
         "- [ ] Attach a copy of the denial notice",
         "- [ ] Send by fax *and* mail, and keep the fax confirmation and a copy of everything",
         f"- [ ] Put {deadline:%B %d, %Y} in your calendar as the hard deadline",
@@ -58,21 +58,21 @@ def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, ma
         flags += [f"Reviewer still expects the insurer to argue: {r}" for r in review["insurer_rebuttals"]]
     flags += [f"Missing information: {m}" for m in facts["missing_information"]]
     if flags:
-        lines += ["## Needs your attention", "", *[f"- {redact.rehydrate(f, mapping)}" for f in flags], ""]
+        lines += ["## Needs your attention", "", *[f"- {redact.rehydrate(f, display)}" for f in flags], ""]
 
     lines += ["---", "", "## Appeal letter", "", letter, "", "---", "", "## Evidence relied on", ""]
     lines += [f"- **{i['source_id']}** [{i['title']}]({i['url']}) ({i['publisher']}): {i['finding']}"
               for i in evidence["items"]]
     lines += ["", "## Plan criteria check", "", "| Criterion | Status | Support |", "|---|---|---|"]
     lines += [f"| {c['criterion_id']}: {c['criterion_text']} | {c['status'].replace('_', ' ')} | "
-              f"{redact.rehydrate(c['supporting_fact'], mapping)} |" for c in policy["criteria"]]
+              f"{redact.rehydrate(c['supporting_fact'], display)} |" for c in policy["criteria"]]
     lines += ["", "## How this was made", "",
               f"Run `{state.run_id}`. Intake (PHI redaction) → Planner → Policy Analyst ∥ Evidence Researcher → "
               f"Writer ⇄ Adversarial Reviewer ∥ Fact Checker ({rounds} round(s)) → Packager. "
               "The model only saw de-identified documents after intake; names and IDs were filled back in on this "
               "machine. The full agent log is in `events.jsonl`."]
 
-    text = redact.rehydrate("\n".join(lines), mapping)
+    text = redact.rehydrate("\n".join(lines), display)
     md_path = out_dir / "appeal_packet.md"
     md_path.write_text(text, encoding="utf-8")
     html_path = out_dir / "appeal_packet.html"

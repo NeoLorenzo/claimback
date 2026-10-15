@@ -153,13 +153,13 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
     emit("intake", "info", f"received {len(raw_docs)} documents: {', '.join(raw_docs)}")
     phi = run_stage(state, "intake_phi", "intake", lambda fb: agents.intake_phi_scan(raw_docs, fb),
                     validate=validate_phi, **S)
-    mapping = redact.build_map(PHIScan(**phi), raw_docs)
+    mapping, display = redact.build_map(PHIScan(**phi), raw_docs)
     docs = {k: redact.apply(v, mapping) for k, v in raw_docs.items()}
     leaked = [l for d in docs.values() for l in redact.leaks(d, mapping)]
     if leaked:
         raise SystemExit(f"Redaction check failed, refusing to continue: {len(leaked)} identifiers remain")
-    state.write_private("phi_map.json", mapping)
-    emit("intake", "done", f"redacted {len(mapping)} identifiers · leak check passed · "
+    state.write_private("phi_map.json", {"redact": mapping, "display": display})
+    emit("intake", "done", f"redacted {len(mapping)} identifier strings ({len(display)} distinct) · leak check passed · "
                            "downstream agents see placeholders only")
 
     facts = run_stage(state, "intake_facts", "intake", lambda fb: agents.intake_facts(docs, fb),
@@ -205,7 +205,7 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
 
     # 4. Writer ⇄ Reviewer + Fact Checker, bounded loop
     known_sources = set(docs) | {i["source_id"] for i in evidence["items"]}
-    validate_draft = make_draft_validator(known_sources, {p.strip("[]") for p in mapping.values()})
+    validate_draft = make_draft_validator(known_sources, {p.strip("[]") for p in display})
     draft = review = factcheck = None
     rounds = 0
     for r in range(1, MAX_ROUNDS + 1):
@@ -249,7 +249,7 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
     # 5. Packager (deterministic: fills identifiers back in locally, builds the packet)
     out_dir = run_stage(state, "package", "packager",
                         lambda fb: packager.build(state, facts, run_plan, policy, evidence, draft,
-                                                  review, factcheck, mapping, rounds), **S)
+                                                  review, factcheck, display, rounds), **S)
     state.status = "done"
     state.save()
     emit("orchestrator", "done", f"appeal packet ready: {out_dir['html']}")

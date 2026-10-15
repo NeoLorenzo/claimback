@@ -41,7 +41,10 @@ def intake_phi_scan(raw_docs: dict[str, str], feedback=None) -> dict:
         "IDs, group numbers, medical record numbers, personal phone numbers, "
         "emails, and treating provider names (including forms like 'Dr. X' and "
         "'X, MD'). Copy each identifier exactly as it appears, character for "
-        "character, and list every distinct spelling separately. Do not list "
+        "character, and list every distinct spelling separately. For each, set "
+        "refers_to to the canonical form of who or what it identifies, without "
+        "titles or credentials (e.g. 'Jane Roe' for 'Dr. Jane Roe, MD' and for "
+        "'Ms. Roe'), so all spellings of one person share it. Do not list "
         "insurer names, insurer phone/fax numbers, insurer PO boxes, policy "
         "numbers, diagnosis codes, or dates of service."
     )
@@ -108,7 +111,11 @@ EVIDENCE_STRUCTURE = TEAM_CONTEXT + (
     "evidence items. Only include sources that actually appear in the notes, "
     "with their real URL. Paraphrase each finding; do not invent "
     "recommendations, grades, or numbers that are not in the notes. Number "
-    "source_ids EV-1, EV-2, ... In gaps, list questions the notes could not answer."
+    "source_ids EV-1, EV-2, ... Exclude anything written, sponsored, or funded "
+    "by a manufacturer or seller of the service or device in question (an insurer "
+    "will dismiss it as marketing); use only independent sources such as "
+    "professional societies, government agencies, and peer-reviewed journals. "
+    "In gaps, list questions the notes could not answer."
 )
 
 
@@ -118,7 +125,8 @@ def evidence_web(facts: dict, run_plan: dict, feedback=None) -> dict:
         "(professional society guidelines, CMS coverage determinations, FDA, "
         "peer-reviewed literature) to answer the research questions. For each "
         "useful source give the title, publisher, URL and what it says, in "
-        "your own words. Prefer the most recent versions of guidelines."
+        "your own words. Prefer the most recent versions of guidelines. Skip "
+        "manufacturer-sponsored or marketing material."
     )
     # De-identified clinical picture only; no identifiers go to search
     user = ("Clinical picture: " + facts["clinical_summary"]

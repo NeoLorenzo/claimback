@@ -13,6 +13,9 @@ class PHIEntity(BaseModel):
         "GROUP_NUMBER", "MEDICAL_RECORD_NUMBER", "PHONE", "EMAIL",
         "PROVIDER_NAME", "OTHER_IDENTIFIER",
     ]
+    # Canonical form of the person or value this text refers to, without titles
+    # or credentials ('Jane Roe' for 'Dr. Jane Roe, MD'). Variants share it.
+    refers_to: str
 
 
 class PHIScan(BaseModel):

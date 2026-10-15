@@ -38,12 +38,13 @@ def respond(agent: str, schema):
     time.sleep(0.3)
     if schema is PHIScan:
         return PHIScan(entities=[
-            {"text": "Rosa Delgado", "category": "PATIENT_NAME"},
-            {"text": "EVM-88231407", "category": "MEMBER_ID"},
-            {"text": "03/14/1961", "category": "DATE_OF_BIRTH"},
-            {"text": "1427 Alder Creek Lane", "category": "PATIENT_ADDRESS"},
-            {"text": "WVE-0049217", "category": "MEDICAL_RECORD_NUMBER"},
-            {"text": "Anil Mehta", "category": "PROVIDER_NAME"},
+            {"text": "Rosa Delgado", "category": "PATIENT_NAME", "refers_to": "Rosa Delgado"},
+            {"text": "EVM-88231407", "category": "MEMBER_ID", "refers_to": "EVM-88231407"},
+            {"text": "03/14/1961", "category": "DATE_OF_BIRTH", "refers_to": "03/14/1961"},
+            {"text": "1427 Alder Creek Lane", "category": "PATIENT_ADDRESS", "refers_to": "1427 Alder Creek Lane"},
+            {"text": "WVE-0049217", "category": "MEDICAL_RECORD_NUMBER", "refers_to": "WVE-0049217"},
+            {"text": "Dr. Anil Mehta, MD", "category": "PROVIDER_NAME", "refers_to": "Anil Mehta"},
+            {"text": "Anil Mehta", "category": "PROVIDER_NAME", "refers_to": "Anil Mehta"},
         ])
     if schema is CaseFacts:
         return CaseFacts(
