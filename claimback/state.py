@@ -3,6 +3,7 @@ interrupted run resumes from the last completed stage."""
 import json
 import os
 import threading
+import time
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -47,7 +48,14 @@ class RunState:
             tmp = self.dir / "state.json.tmp"
             data = asdict(self)
             tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-            os.replace(tmp, self.dir / "state.json")  # atomic on the same volume
+            for attempt in range(20):  # Windows refuses the swap while a reader (e.g. the web view) has the file open
+                try:
+                    os.replace(tmp, self.dir / "state.json")  # atomic on the same volume
+                    break
+                except PermissionError:
+                    if attempt == 19:
+                        raise
+                    time.sleep(0.05)
 
     @classmethod
     def load(cls, run_id: str) -> "RunState":

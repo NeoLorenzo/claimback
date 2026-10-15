@@ -134,19 +134,37 @@ def make_draft_validator(known_sources: set[str], placeholders: set[str]):
 
 
 # ---- the run --------------------------------------------------------------------
-def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | None = None,
-                offline: bool = False) -> Path:
+def orchestrate(case_dir: Path | None, run_id: str | None = None, stop_after: str | None = None,
+                offline: bool = False, new_run_id: str | None = None) -> Path:
+    """Start a new run on case_dir, or resume run_id from its checkpoints."""
     if run_id:
         state = RunState.load(run_id)
         case_dir = Path(state.case_dir)
+        state.status = "running"
+        state.save()
         set_log_file(state.dir / "events.jsonl")
         emit("orchestrator", "start", f"resuming run {run_id}")
     else:
-        run_id = f"{case_dir.name}-{datetime.now():%Y%m%d-%H%M%S}"
+        run_id = new_run_id or f"{case_dir.name}-{datetime.now():%Y%m%d-%H%M%S}"
         state = RunState(run_id=run_id, case_dir=str(case_dir.resolve()))
         state.save()
         set_log_file(state.dir / "events.jsonl")
         emit("orchestrator", "start", f"new run {run_id} for case '{case_dir.name}'")
+    try:
+        return _run(state, case_dir, stop_after, offline)
+    except StopRequested:
+        state.status = "stopped"
+        state.save()
+        emit("orchestrator", "warn", "run stopped on request · resume to continue from the checkpoint")
+        raise
+    except BaseException as e:
+        state.status = "failed"
+        state.save()
+        emit("orchestrator", "error", f"run failed: {type(e).__name__}: {str(e)[:200]} · resume to continue")
+        raise
+
+
+def _run(state: RunState, case_dir: Path, stop_after: str | None, offline: bool) -> Path:
     emit("orchestrator", "info",
          "workflow: intake → planner → (policy ∥ evidence) → writer ⇄ (reviewer ∥ fact-checker) → packager")
 
@@ -169,14 +187,15 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
     facts = run_stage(state, "intake_facts", "intake", lambda fb: agents.intake_facts(docs, fb),
                       validate=validate_facts, **S)
     emit("intake", "handoff", f"planner: {facts['service_requested']} denied "
-                              f"({facts['denial_reason_code']}) on {facts['denial_date']}")
+                              f"({facts['denial_reason_code']}) on {facts['denial_date']}", to=["planner"])
 
     # 2. Planner
     run_plan = run_stage(state, "plan", "planner", lambda fb: agents.plan(facts, fb), **S)
     emit("planner", "info", f"category={run_plan['denial_category']} · appeal={run_plan['appeal_type']}")
     emit("planner", "info", f"strategy: {run_plan['strategy']}")
     emit("planner", "handoff", f"policy_analyst: {len(run_plan['policy_questions'])} questions · "
-                               f"→ evidence_researcher: {len(run_plan['research_questions'])} questions")
+                               f"→ evidence_researcher: {len(run_plan['research_questions'])} questions",
+         to=["policy_analyst", "evidence_researcher"])
 
     # 3. Policy Analyst and Evidence Researcher in parallel
     def do_evidence():
@@ -202,10 +221,10 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
     for d in policy["discrepancies"]:
         emit("policy_analyst", "info", f"discrepancy: {d}")
     met = sum(c["status"] == "met" for c in policy["criteria"])
-    emit("policy_analyst", "handoff", f"writer: {met}/{len(policy['criteria'])} criteria met")
+    emit("policy_analyst", "handoff", f"writer: {met}/{len(policy['criteria'])} criteria met", to=["writer"])
     for item in evidence["items"]:
         emit("evidence_researcher", "info", f"{item['source_id']}: {item['title']} ({item['publisher']})")
-    emit("evidence_researcher", "handoff", f"writer: {len(evidence['items'])} sources")
+    emit("evidence_researcher", "handoff", f"writer: {len(evidence['items'])} sources", to=["writer"])
 
     # 4. Writer ⇄ Reviewer + Fact Checker, bounded loop
     known_sources = set(docs) | {i["source_id"] for i in evidence["items"]}
@@ -220,7 +239,8 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
                                                          prev, prev_review, prev_fc, fb),
                           validate=validate_draft, **S)
         emit("writer", "handoff", f"reviewer + fact_checker: draft {r} "
-                                  f"({len(draft['letter_markdown'].split())} words, {len(draft['claims'])} claims)")
+                                  f"({len(draft['letter_markdown'].split())} words, {len(draft['claims'])} claims)",
+             to=["reviewer", "fact_checker"])
 
         with ThreadPoolExecutor(max_workers=2) as pool:
             f_rev = pool.submit(run_stage, state, f"review_{r}", "reviewer",
@@ -232,11 +252,13 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
         unsupported = [c for c in factcheck["checks"] if not c["supported"]]
         n_bad = len(unsupported) + len(factcheck["untracked_claims"])
         emit("reviewer", "info", f"score {review['score']}/10 · {review['decision']} · "
-                                 f"{len(review['required_changes'])} required changes")
+                                 f"{len(review['required_changes'])} required changes",
+             score=review["score"], decision=review["decision"], round=r)
         for rb in review["insurer_rebuttals"][:3]:
             emit("reviewer", "info", f"insurer would argue: {rb}")
         emit("fact_checker", "info", f"{len(factcheck['checks']) - len(unsupported)}/{len(factcheck['checks'])} "
-                                     f"claims verified · {n_bad} problems")
+                                     f"claims verified · {n_bad} problems",
+             verified=len(factcheck["checks"]) - len(unsupported), claims=len(factcheck["checks"]), round=r)
         for c in unsupported:
             emit("fact_checker", "warn", f"{c['claim_id']} unsupported: {c['explanation']}")
 
@@ -245,7 +267,7 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
             break
         if r < MAX_ROUNDS:
             emit("orchestrator", "loop", f"round {r} not approved → back to writer with "
-                                         f"{len(review['required_changes'])} changes + {n_bad} fact problems")
+                                         f"{len(review['required_changes'])} changes + {n_bad} fact problems", to=["writer"], round=r)
         else:
             emit("orchestrator", "warn", f"round limit ({MAX_ROUNDS}) reached → packaging with "
                                          "open issues flagged for human review")
@@ -256,5 +278,5 @@ def orchestrate(case_dir: Path, run_id: str | None = None, stop_after: str | Non
                                                   review, factcheck, display, rounds), **S)
     state.status = "done"
     state.save()
-    emit("orchestrator", "done", f"appeal packet ready: {out_dir['html']}")
+    emit("orchestrator", "done", f"appeal packet ready: {out_dir['html']}", packet=True)
     return Path(out_dir["html"])

@@ -78,6 +78,14 @@ python -m claimback resume <run_id>                           # ...and resume fr
 python -m claimback run cases/cgm-denial --mock               # no API calls (tests the orchestration)
 ```
 
+### Demo view
+
+```bash
+python -m claimback serve      # http://127.0.0.1:8765
+```
+
+A live agent timeline: the workflow diagram lights up as agents work, handoffs and revision loops animate, and stats (tokens, cost, reviewer score, claims verified, failures recovered) update as the run goes. **Start run** launches a run from the page (tick *mock* to rehearse without API calls). **Replay** plays a finished run back at 1–60× speed for a recording. Idle gaps, like the wait before a resume, are skipped. The server binds to localhost only.
+
 Output: `runs/<run_id>/output/appeal_packet.html` (printable) and `.md`, plus `events.jsonl` (the full agent log) and `state.json` (the checkpoints).
 
 ### How the pieces map to code

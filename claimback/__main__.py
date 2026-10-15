@@ -5,6 +5,7 @@
   python -m claimback run cases/cgm-denial --stop-after policy   # simulate a crash
   python -m claimback resume <run_id>                 # continue from the last checkpoint
   python -m claimback purge <run_id>                  # delete a run and its identifier map
+  python -m claimback serve                           # live agent timeline + replay at http://127.0.0.1:8765
 """
 import argparse
 import os
@@ -22,13 +23,21 @@ def main() -> int:
     r.add_argument("--stop-after", help="stop the run after this stage (simulates a crash)")
     r.add_argument("--offline", action="store_true", help="skip web search; use the case's reference library")
     r.add_argument("--mock", action="store_true", help="no API calls; canned agent outputs (for testing)")
+    r.add_argument("--run-id", help="id for the new run (default: <case>-<timestamp>)")
     s = sub.add_parser("resume", help="resume a run from its last checkpoint")
     s.add_argument("run_id")
     s.add_argument("--mock", action="store_true")
     s.add_argument("--offline", action="store_true")
     d = sub.add_parser("purge", help="delete a run directory, including the local identifier map")
     d.add_argument("run_id")
+    v = sub.add_parser("serve", help="web view: live agent timeline and replay")
+    v.add_argument("--port", type=int, default=8765)
     args = p.parse_args()
+
+    if args.cmd == "serve":
+        from .server import serve
+        serve(args.port)
+        return 0
 
     # Set before importing modules that read these flags
     if getattr(args, "mock", False):
@@ -51,7 +60,8 @@ def main() -> int:
 
     try:
         if args.cmd == "run":
-            orchestrate(args.case_dir, stop_after=args.stop_after, offline=args.offline)
+            orchestrate(args.case_dir, stop_after=args.stop_after, offline=args.offline,
+                        new_run_id=args.run_id)
         else:
             orchestrate(None, run_id=args.run_id, offline=args.offline)
     except StopRequested as e:
