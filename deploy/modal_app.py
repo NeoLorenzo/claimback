@@ -105,7 +105,15 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
             from claimback.cases import Case
             letter = next((o for o in Case.load(args["case_id"]).outbox if o["id"] == args["outbox_id"]), {})
             if os.environ.get("SCRIPTED_INSURER", "1") == "1" and letter.get("kind") in INSURER_SCRIPT:
-                scripted_insurer.spawn(owner, args["case_id"], letter["kind"])
+                # Report the send as done first, then play the insurer's replies in this same warm
+                # container: no extra cold starts, and still serialized with everything else.
+                volume.commit()
+                _job(job_id, status="done", result=result)
+                job_id = None
+                for wait, scene in INSURER_SCRIPT[letter["kind"]]:
+                    time.sleep(wait)
+                    ops.simulate(owner, args["case_id"], scene, direct=True)
+                    volume.commit()
         elif kind == "confirm":
             ops.confirm(owner, args["case_id"], args["task_id"])
         elif kind == "edit":
@@ -154,17 +162,9 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
 # Every message it sends is marked as simulated; it goes through case_ops, so it's serialized
 # with everything else that touches the case.
 INSURER_SCRIPT = {
-    "initial_appeal": [(2, "ack"), (3, "evidence-request")],
-    "evidence_response": [(3, "overturned")],
+    "initial_appeal": [(1, "ack"), (2, "evidence-request")],
+    "evidence_response": [(2, "overturned")],
 }
-
-
-@app.function(**WORKER, timeout=10 * 60)
-def scripted_insurer(owner: str, case_id: str, letter_kind: str) -> None:
-    import time
-    for wait, scene in INSURER_SCRIPT.get(letter_kind, []):
-        time.sleep(wait)
-        case_ops.remote("simulate", owner, {"case_id": case_id, "scene": scene, "direct": True}, None)
 
 
 @app.function(**WORKER, schedule=modal.Cron("*/2 * * * *"), timeout=15 * 60)
