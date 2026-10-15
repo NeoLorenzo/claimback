@@ -8,6 +8,20 @@ from pydantic import BaseModel
 
 from .log import emit
 
+
+def _load_dotenv() -> None:
+    """Read KEY=value lines from the repo's .env (gitignored) without overriding the real env."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    if not os.path.exists(path):
+        return
+    for line in open(path, encoding="utf-8"):
+        key, sep, value = line.strip().partition("=")
+        if sep and key and not key.startswith("#"):
+            os.environ.setdefault(key.strip(), value.strip().strip('"'))
+
+
+_load_dotenv()
+
 MODEL = os.environ.get("CLAIMBACK_MODEL", "claude-opus-5-5")
 MOCK = os.environ.get("CLAIMBACK_MOCK") == "1"
 
