@@ -121,6 +121,57 @@ Deliver proactive contact in stages:
 
 Extend the demo with an ID request that triggers a notification, an optional user call, and an insurer receipt-confirmation call. Use simulated calls until a real calling integration is available, and label those simulations clearly.
 
+## Demo vision: The agent gets blocked, reaches out, and resumes
+
+The demo should make the ongoing workflow visible. Show the agent progressing through the case, reaching a real dependency on the user, contacting them, and continuing once that dependency is resolved. Keep the case timeline and current next action on screen throughout.
+
+Use a synthetic case and synthetic ID verification materials. Before starting, enable calls and notification fallback for the demo recipient.
+
+### Scene 1: Progress stops at ID verification
+
+The workflow advances through intake, policy analysis, evidence collection, and appeal preparation. An imported insurer message then states that identity verification is required before the appeal can proceed.
+
+The timeline highlights **“Blocked: ID verification required”**, creates an outstanding task, and shows **“Waiting for you”** with the source request and an **“Complete ID verification”** action. The agent preserves its progress at that checkpoint. It must not claim that the insurer has accepted or processed the appeal.
+
+### Scene 2: The agent calls and the user answers
+
+The agent initiates an authorized call. The interface shows the call attempt while the demo phone rings. After identifying itself and confirming the recipient, the agent explains:
+
+> “Your appeal is waiting on ID verification. Please open ClaimBack and use the verification link in your case so it can move forward.”
+
+The user acknowledges the request but does not complete verification yet. The timeline records that the user was reached; the ID task remains open. Answering a call does not resolve the blocker.
+
+### Scene 3: A later call is declined or unanswered
+
+Advance to a scheduled follow-up and visibly label the time jump. The ID task is still outstanding, so the agent makes another call within the user's contact preferences. This time the presenter declines the call or lets it go unanswered while the phone is on Do Not Disturb.
+
+The interface records the available call outcome, such as **“Declined”** or **“No answer”**, and switches to the configured notification channel without repeatedly calling.
+
+Do not assume the calling service can detect Do Not Disturb. The demo can show that setting on the phone, while ClaimBack records only the outcome actually reported by its calling integration. If ClaimBack already knows calls are paused through its own preferences, skip the call and use the permitted notification fallback.
+
+### Scene 4: A notification offers the next action
+
+Show the notification being sent and, where available, delivered to the demo device:
+
+> “Action needed in ClaimBack. Open your case to complete the outstanding step.”
+
+Opening it takes the user directly to the ID verification task, where the exact requirement and designated secure submission route are shown. Keep sensitive details out of the notification preview. Do Not Disturb may also silence notifications; demonstrate the fallback arriving in the notification centre rather than promising an audible alert or bypassing the user's settings.
+
+### Scene 5: Verification is confirmed and work continues
+
+The user completes the synthetic verification step. Distinguish **“Submitted; awaiting confirmation”** from **“Verified”** if the insurer or verification service still needs to confirm acceptance.
+
+Once the required confirmation arrives, the ID task is resolved, pending reminders are cancelled, and the workflow resumes from its saved progress. The timeline shows the full sequence: blocker → answered call → later unsuccessful call → notification → verification confirmation → resumed work.
+
+### What the demo should prove
+
+- The agent recognizes a human dependency and explains what is needed.
+- The user can see why progress paused and how to unblock it.
+- An answered call, a declined call, and a notification each have distinct recorded outcomes.
+- Unsuccessful contact triggers a configured fallback without duplicate calls or reminders.
+- The case resumes only after the dependency is satisfied; earlier analysis remains available.
+- Real integrations and simulated events are clearly distinguished. Label time jumps, simulated insurer messages, call outcomes, and verification confirmations when used.
+
 ## Implementation direction
 
 - Add case, correspondence, task, deadline, submission, and outcome models alongside the existing handoff schemas.
