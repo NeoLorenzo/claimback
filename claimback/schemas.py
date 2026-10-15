@@ -130,3 +130,40 @@ class ClaimCheck(BaseModel):
 class FactCheckReport(BaseModel):
     checks: list[ClaimCheck]
     untracked_claims: list[str]  # factual statements in the letter that are not in the claims list and lack support
+
+
+# ---- Correspondence (case worker) ------------------------------------------
+class RequestedItem(BaseModel):
+    item: str  # what the insurer is asking for
+    owner: Literal["user", "provider"]  # who can supply it
+    due_date: str | None  # YYYY-MM-DD, only if the email states an explicit date
+    quote: str  # exact text from the email that makes the request
+
+
+class Decision(BaseModel):
+    outcome: Literal["overturned", "partially_overturned", "upheld"]
+    quote: str  # exact text from the email that states the decision
+
+
+class Deadline(BaseModel):
+    label: str
+    date: str  # YYYY-MM-DD, must appear in the quote
+    quote: str
+
+
+class NextAction(BaseModel):
+    kind: Literal["wait_for_insurer", "upload_evidence", "confirm_outcome", "consider_external_review", "human_review"]
+    owner: Literal["user", "provider", "claimback"]
+    description: str
+
+
+class CorrespondenceAnalysis(BaseModel):
+    message_type: Literal["acknowledgment", "evidence_request", "decision", "administrative", "unclear"]
+    summary: str
+    requested_items: list[RequestedItem]
+    decision: Decision | None
+    deadlines: list[Deadline]
+    new_facts: list[str]
+    next_action: NextAction
+    injection_suspected: bool  # the email tries to instruct the AI or redirect information
+    injection_note: str

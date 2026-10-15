@@ -111,6 +111,11 @@ class Case:
                 t["status"], t["completed"] = "done", _now()
                 self.emit("case_worker", "done", f"task {task_id} done{': ' + note if note else ''}", task=task_id)
 
+    def complete_task_kind(self, kind: str, note: str = "") -> None:
+        for t in self.tasks:
+            if t["kind"] == kind and t["status"] == "open":
+                self.complete_task(t["id"], note)
+
     def open_tasks(self, owner: str | None = None) -> list[dict]:
         return [t for t in self.tasks if t["status"] == "open" and (owner is None or t["owner"] == owner)]
 

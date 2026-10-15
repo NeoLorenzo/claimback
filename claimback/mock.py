@@ -5,8 +5,10 @@ import itertools
 import threading
 import time
 
-from .schemas import (AppealDraft, CaseFacts, EvidencePack, FactCheckReport,
-                      PHIScan, PolicyAnalysis, ReviewVerdict, RunPlan)
+import re
+
+from .schemas import (AppealDraft, CaseFacts, CorrespondenceAnalysis, EvidencePack,
+                      FactCheckReport, PHIScan, PolicyAnalysis, ReviewVerdict, RunPlan)
 
 _counts: dict[str, itertools.count] = {}
 _lock = threading.Lock()
@@ -34,8 +36,38 @@ Sincerely,
 """
 
 
-def respond(agent: str, schema):
+def _correspondence(text: str) -> CorrespondenceAnalysis:
+    """Reads the email like a (very literal) agent would, quoting it exactly."""
+    def sentence(pat):
+        return next((s.strip() for s in re.split(r"(?<=[.:])\s+|\n", text) if re.search(pat, s)), "")
+    none = dict(requested_items=[], decision=None, deadlines=[], new_facts=[], injection_suspected=False, injection_note="")
+    if re.search(r"OVERTURNED|UPHELD", text):
+        q = sentence(r"OVERTURNED|UPHELD")
+        outcome = "overturned" if "OVERTURNED" in q else "upheld"
+        return CorrespondenceAnalysis(message_type="decision", summary=f"Decision: {outcome}.", **{**none,
+            "decision": {"outcome": outcome, "quote": q}},
+            next_action={"kind": "confirm_outcome", "owner": "user", "description": "Confirm the decision"})
+    if "need the following" in text:
+        q = sentence(r"letter of medical necessity")
+        dq = sentence(r"within 14 calendar days")
+        m = re.search(r"\(by ([A-Za-z]+ \d{1,2}, \d{4})\)", dq)
+        due = __import__("datetime").datetime.strptime(m.group(1), "%B %d, %Y").strftime("%Y-%m-%d") if m else None
+        return CorrespondenceAnalysis(message_type="evidence_request", summary="Insurer requests more evidence.",
+            **{**none, "requested_items": [{"item": "Letter of medical necessity", "owner": "provider",
+                                            "due_date": due, "quote": dq if due else q}],
+               "deadlines": [{"label": "Evidence due", "date": due, "quote": dq}] if due else []},
+            next_action={"kind": "upload_evidence", "owner": "user", "description": "Upload the letter"})
+    if "confirms receipt" in text:
+        return CorrespondenceAnalysis(message_type="acknowledgment", summary="Insurer confirms receipt.", **none,
+            next_action={"kind": "wait_for_insurer", "owner": "claimback", "description": "Wait for the decision"})
+    return CorrespondenceAnalysis(message_type="unclear", summary="Unclear message.", **none,
+        next_action={"kind": "human_review", "owner": "user", "description": "Read it"})
+
+
+def respond(agent: str, schema, user: str = ""):
     time.sleep(0.3)
+    if schema is CorrespondenceAnalysis:
+        return _correspondence(user)
     if schema is PHIScan:
         return PHIScan(entities=[
             {"text": "Rosa Delgado", "category": "PATIENT_NAME", "refers_to": "Rosa Delgado"},

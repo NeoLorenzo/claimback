@@ -54,7 +54,7 @@ def call(agent: str, system: str, user: str | list, schema: type[BaseModel],
          effort: str = "medium", max_tokens: int = 16000) -> BaseModel:
     if MOCK:
         from . import mock
-        return mock.respond(agent, schema)
+        return mock.respond(agent, schema, user if isinstance(user, str) else "")
 
     content = user if isinstance(user, list) else [{"type": "text", "text": user}]
     try:

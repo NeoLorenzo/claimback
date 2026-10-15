@@ -4,7 +4,8 @@ restarting it never loses or repeats work."""
 import os
 import time
 
-from .cases import Case, case_id_from_addresses, mailbox_address
+from .cases import Case, all_cases, case_id_from_addresses, mailbox_address
+from .correspondence import process_pending
 from .connectors import InboundEmail, get_connector
 from .log import emit
 
@@ -63,6 +64,16 @@ def check_mailbox(connector) -> int:
     return new
 
 
+def advance_cases() -> int:
+    """Read every received-but-unprocessed message on every open case."""
+    n = 0
+    for case in all_cases():
+        if case.status != "closed" and any(c["direction"] == "in" and c["status"] == "received"
+                                           for c in case.correspondence):
+            n += process_pending(case)
+    return n
+
+
 def watch(interval: int = 20, once: bool = False) -> None:
     connector = get_connector()
     emit("case_worker", "start", f"watching the {connector.name} mailbox ({mailbox_address()}) every {interval}s")
@@ -70,9 +81,10 @@ def watch(interval: int = 20, once: bool = False) -> None:
     while True:
         try:
             new = check_mailbox(connector)
-            failures = 0
             if new or once:
                 emit("case_worker", "info", f"mailbox checked · {new} new case message(s)")
+            advance_cases()
+            failures = 0
         except Exception as e:  # network or login trouble: back off and try again
             failures += 1
             emit("case_worker", "retry", f"mailbox check failed ({type(e).__name__}: {str(e)[:120]}); "
