@@ -44,7 +44,9 @@ def intake_phi_scan(raw_docs: dict[str, str], feedback=None) -> dict:
         "character, and list every distinct spelling separately. For each, set "
         "refers_to to the canonical form of who or what it identifies, without "
         "titles or credentials (e.g. 'Jane Roe' for 'Dr. Jane Roe, MD' and for "
-        "'Ms. Roe'), so all spellings of one person share it. Do not list "
+        "'Ms. Roe'), so all spellings of one person share it. For anything "
+        "that isn't a name (IDs, dates, addresses, phone numbers), set "
+        "refers_to to the identifier text itself. Do not list "
         "insurer names, insurer phone/fax numbers, insurer PO boxes, policy "
         "numbers, diagnosis codes, or dates of service."
     )

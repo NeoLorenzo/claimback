@@ -31,13 +31,26 @@ def build_map(scan: PHIScan, docs: dict[str, str]) -> tuple[dict[str, str], dict
         text = ent.text.strip()
         if len(text) < 3 or text in mapping:
             continue
-        mapping[text] = placeholder_for(ent.category, (ent.refers_to or text).strip())
+        mapping[text] = placeholder_for(ent.category, _canonical(ent.category, text, ent.refers_to))
     # Deterministic backstop for patterns the model might miss
     for doc in docs.values():
         for m in EMAIL_RE.findall(doc) + SSN_RE.findall(doc):
             if m not in mapping:
                 mapping[m] = placeholder_for("OTHER_IDENTIFIER", m)
     return mapping, display
+
+
+NAME_CATEGORIES = {"PATIENT_NAME", "PROVIDER_NAME"}
+
+
+def _canonical(category: str, text: str, refers_to: str | None) -> str:
+    """Only name variants are merged, and only when the model's canonical name
+    shares a word with the text ('Ms. Roe' -> 'Jane Roe'). Every other
+    identifier keeps its own text, so a member ID is never filled back in as a name."""
+    if category not in NAME_CATEGORIES or not refers_to:
+        return text
+    words = lambda s: {w for w in re.findall(r"[a-z]+", s.casefold()) if len(w) > 2}
+    return refers_to.strip() if words(text) & words(refers_to) else text
 
 
 def apply(text: str, mapping: dict[str, str]) -> str:
