@@ -122,21 +122,26 @@ The deck: https://claude.ai/artifact/BnDNbC45KgskAbtqW8mXjF. The editable source
 
 | # | Slide | Criteria |
 |---|---|---|
-| 1 | Insurers deny 1 in 5 claims; fewer than 1 in 100 denials are appealed (KFF 2024 data) | ③ |
-| 2 | Customer: clinic billing teams pay; patients get the same help (Premier 2024) | ③ |
-| 3 | Product: what one run produces (real "At a glance" values) | ① |
-| 4 | Agent architecture: planning, handoffs, error recovery | ② |
-| 5 | Long-running case workflow (built vs. in progress, roadmap labeled) | ② |
-| 6 | The demo: four scenes | ④ ⑤ |
-| 7 | Results and evaluation: five live tests, time and cost | ① ② ⑥ |
-| 8 | Responsible design, including the known gaps | ⑥ |
-| 9 | Business model and competition | ③ |
-| 10 | The ask and next steps | ③ ⑥ |
+| 1 | The problem: most appeals win (81%), almost nobody appeals (11.5% appealed) — 20×20 square grid, KFF Medicare Advantage 2024 | ③ |
+| 2 | Why now: insurers deny at machine speed (1.2 s, Cigna, as reported by ProPublica), patients appeal by hand (~3 rounds of 45–60 days, Premier) — both on one time scale, where 1.2 s is invisible | ③ |
+| 3 | Market: 450M denied claims × $43.84 to fight each = $19.7B a year spent by providers (Premier estimates); hospitals pay teams to fight, patients fight alone | ③ |
+| 4 | Meet Rosa (synthetic): night scene, what a crash can cause (confusion, a fall, a seizure, passing out), she lives alone; doctor prescribes a monitor → insurer denies → the catch: that rule was removed in January | ① |
+| 5 | How it works: agent subway map with a one-line job per agent and the revise loop; Policy Analyst finds the removed rule | ② |
+| 6 | Adversarial review: draft 1 → insurer agent finds 4 weak spots (one paraphrased) → draft 2 approved, every fact checked | ② ④ |
+| 7 | How we rate an appeal’s chances: Planner, Policy Analyst and Adversarial Reviewer judge independently; a rule in plain code combines them (all three for “Good chance”, any one for “Unlikely”); not yet calibrated on real outcomes ([merit-criteria.md](merit-criteria.md)) | ② ④ |
+| 8 | What Rosa gets: real denial-reason cell from her packet, in light mode, with the removed rule highlighted; insurer’s mistake caught, appeal deadline | ① ⑤ |
+| 9 | Casework: illustrative day-by-day timeline (sent, receipt, evidence request, decision) beside the patient app’s task card; built, simulated, roadmap labeled | ② ⑥ |
+| 10 | Proof: scoreboard of four live runs, outcome first, model cost and time on the right; known gaps | ① ② ⑥ |
+| 11 | Business model (success fee, hypothesis), the close (the agents do the work, people decide) | ③ ⑥ |
 
 ## Sources behind the numbers
 
-- KFF, [Claims Denials and Appeals in ACA Marketplace Plans in 2024](https://www.kff.org/patient-consumer-protections/claims-denials-and-appeals-in-aca-marketplace-plans-in-2024/) (March 24, 2026): 19% of in-network claims denied (about 85M); fewer than 1% of denied claims appealed; 66% of internal appeals upheld; 5,881 external appeals.
+- KFF, [Claims Denials and Appeals in ACA Marketplace Plans in 2024](https://www.kff.org/patient-consumer-protections/claims-denials-and-appeals-in-aca-marketplace-plans-in-2024/) (March 24, 2026): 451M in-network claims; 19% denied (about 85M); at least 262,982 internal appeals, fewer than 1% of denials (about 0.3%); 165,863 (66%) upheld, so about 97K (34%) not upheld (our subtraction); at least 5,881 external appeals.
+- ProPublica and The Capitol Forum, [How Cigna Saves Millions by Having Its Doctors Reject Claims Without Reading Them](https://www.propublica.org/article/cigna-pxdx-medical-health-insurance-rejection-claims) (March 2023): 300,000+ claims denied over two months in 2022 via PXDX, 1.2 seconds each on average; Cigna disputes the description.
+- US Senate Permanent Subcommittee on Investigations, “Refusal of Recovery” (October 17, 2024): UnitedHealthcare’s post-acute denial rate rose from 10.9% (2020) to 22.7% (2022) while it automated reviews.
+- AMA, [Physicians concerned AI increases prior authorization denials](https://www.ama-assn.org/press-center/ama-press-releases/physicians-concerned-ai-increases-prior-authorization-denials) (February 24, 2025): 61% of physicians.
+- KFF, [Prior Authorization Metrics Provide New Insights into Insurer Practices, but Gaps Remain](https://www.kff.org/patient-consumer-protections/prior-authorization-metrics-provide-new-insights-into-insurer-practices-but-gaps-remain/) (August 13, 2026), insurer-posted 2025 data: appealed prior-auth denials overturned 67% (Medicare Advantage), 47% (Medicaid managed care), 43% (ACA marketplace); insurer ranges 40–93%, 22–81%, 16–54%.
 - KFF, [Medicare Advantage Insurers Made Nearly 53 Million Prior Authorization Determinations in 2024](https://www.kff.org/medicare/medicare-advantage-insurers-made-nearly-53-million-prior-authorization-determinations-in-2024/): 80.7% of appealed denials fully or partially overturned.
-- Premier Inc., [Trend alert: private payers retain profits by refusing or delaying legitimate medical claims](https://premierinc.com/newsroom/blog/trend-alert-private-payers-retain-profits-by-refusing-or-delaying-legitimate-medical-claims) (March 21, 2024): $19.7B a year spent fighting denials; $43.84 average cost per denied claim; 54.3% of private-payer denials eventually paid after multiple rounds.
+- Premier Inc., [Trend alert: private payers retain profits by refusing or delaying legitimate medical claims](https://premierinc.com/newsroom/blog/trend-alert-private-payers-retain-profits-by-refusing-or-delaying-legitimate-medical-claims) (March 21, 2024): $19.7B a year spent fighting denials; $43.84 average cost per denied claim; nearly 15% of private-payer claims initially denied, about 450M a year (Premier’s estimate: 15% of ~3B claims); 54.3% of private-payer denials eventually paid after multiple rounds.
 - Competitors, checked on their own sites in October 2026: [Claimable](https://www.getclaimable.com/) ($39.95 per appeal, 85+ drugs, mails and faxes appeals and tracks them); [Counterforce Health](https://www.counterforcehealth.org/) (free, grant-funded, appeal letters, voice assistant in beta); [Fight Health Insurance](https://www.fighthealthinsurance.com/) (free or pay what you want, several drafts, on-device OCR); [Waystar AltitudeAI](https://investors.waystar.com/news-releases/news-release-details/waystar-advances-ai-leadership-next-generation-denial-prevention) (enterprise revenue-cycle software, bulk appeal packages). Their success rates are self-reported, so the deck doesn't compare against them.
-- Model cost per run: $1.39–$3.10, measured in [EVALUATION.md](../EVALUATION.md). The $25-per-appeal price is a hypothesis to test in pilots.
+- Model cost per run: $1.39–$3.10, measured in [EVALUATION.md](../EVALUATION.md). Pricing is a hypothesis to test in pilots: a success fee, charged only after a confirmed win (an earlier version proposed $25 per appeal).

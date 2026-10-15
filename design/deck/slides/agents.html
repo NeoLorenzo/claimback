@@ -1,48 +1,43 @@
-<section id="agents" data-transition="fade" style="background:#F5F3EC;color:#16201E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
-<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#1F6F5C">Agent architecture</p>
-<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.15">Seven agents, typed handoffs, a loop that argues back</h2>
-<div style="display:flex;gap:16px;align-items:center">
-<div style="width:230px;display:flex;flex-direction:column;gap:6px;background:#FDFCF8;border:1px solid #DAD5C7;border-radius:12px;padding:20px">
-<p style="font-size:26px;font-weight:600">Intake</p>
-<p style="font-size:24px;color:#4A5652">extracts facts, redacts identifiers</p>
+<section id="agents" data-transition="fade" style="box-sizing:border-box;background:#FFFFFF;color:#1D1D1F;font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;padding:96px 140px 64px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<h2 style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:96px;font-weight:700;letter-spacing:-0.03em;line-height:1.04;letter-spacing:-0.035em;color:#1D1D1F;text-align:center;">ClaimBack does the fighting.</h2>
+<p style="font-size:36px;color:#6E6E73;text-align:center">Seven Claude agents take Rosa’s case.</p>
 </div>
-<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
-<div style="width:230px;display:flex;flex-direction:column;gap:6px;background:#FDFCF8;border:1px solid #DAD5C7;border-radius:12px;padding:20px">
-<p style="font-size:26px;font-weight:600">Planner</p>
-<p style="font-size:24px;color:#4A5652">strategy, questions, merit</p>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:28px">
+<svg width="1640" height="500" viewBox="0 0 1640 500" role="img" aria-label="Agent pipeline: Intake removes IDs, Planner picks a strategy, Policy Analyst and Evidence Researcher work in parallel, Writer drafts the letter, Adversarial Reviewer and Fact Checker check it and can send it back to revise, Packager builds the packet">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#E3A43B"/></marker></defs>
+<path d="M 110 250 L 350 250" stroke="#CFE3DA" stroke-width="4" fill="none"/>
+<path d="M 350 250 C 475.0 250 475.0 130 600 130 M 350 250 C 475.0 250 475.0 380 600 380" stroke="#CFE3DA" stroke-width="4" fill="none"/>
+<path d="M 600 130 C 725.0 130 725.0 250 850 250 M 600 380 C 725.0 380 725.0 250 850 250" stroke="#CFE3DA" stroke-width="4" fill="none"/>
+<path d="M 850 250 C 980.0 250 980.0 130 1110 130 M 850 250 C 980.0 250 980.0 380 1110 380" stroke="#CFE3DA" stroke-width="4" fill="none"/>
+<path d="M 1110 130 C 1235.0 130 1235.0 250 1360 250 M 1110 380 C 1235.0 380 1235.0 250 1360 250" stroke="#CFE3DA" stroke-width="4" fill="none"/>
+<path d="M 1360 250 L 1522 250" stroke="#CFE3DA" stroke-width="4" fill="none"/>
+<path d="M 1090 122 C 1020 112 920 132 862 226" stroke="#E3A43B" stroke-width="3" stroke-dasharray="10 8" fill="none" marker-end="url(#ah)"/>
+<text x="930" y="116" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:600" fill="#B07A1E">revise</text>
+<circle cx="110" cy="250" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="4"/>
+<text x="110" y="326" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Intake</text><text x="110" y="360" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">removes her IDs</text>
+<circle cx="350" cy="250" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="4"/>
+<text x="350" y="326" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Planner</text><text x="350" y="360" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">picks a strategy</text>
+<circle cx="600" cy="130" r="18" fill="#E3A43B" stroke="#E3A43B" stroke-width="4"/>
+<text x="600" y="66" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#B07A1E">Policy Analyst</text><text x="600" y="98" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">reads the plan’s rules</text>
+<circle cx="600" cy="380" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="4"/>
+<text x="600" y="438" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Evidence Researcher</text><text x="600" y="472" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">finds medical evidence</text>
+<circle cx="850" cy="250" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="4"/>
+<text x="850" y="326" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Writer</text><text x="850" y="360" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">drafts the letter</text>
+<circle cx="1110" cy="130" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="4"/>
+<text x="1110" y="66" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Adversarial Reviewer</text><text x="1110" y="98" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">plays the insurer</text>
+<circle cx="1110" cy="380" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="4"/>
+<text x="1110" y="438" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Fact Checker</text><text x="1110" y="472" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">checks every fact</text>
+<circle cx="1360" cy="250" r="14" fill="#FFFFFF" stroke="#1D1D1F" stroke-width="4"/>
+<text x="1360" y="326" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Packager</text><text x="1360" y="360" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">builds the packet</text>
+<path d="M 1528 216 L 1562 216 L 1578 232 L 1578 284 L 1528 284 Z" fill="#1D1D1F"/>
+<path d="M 1562 216 L 1562 232 L 1578 232 Z" fill="#6E6E73"/>
+<path d="M 1540 244 L 1566 244 M 1540 257 L 1566 257 M 1540 270 L 1555 270" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+<text x="1552" y="326" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:30px;font-weight:600" fill="#1D1D1F">Packet</text><text x="1552" y="360" text-anchor="middle" style="font-family:'Geist', 'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:400" fill="#86868B">ready to sign</text>
+</svg>
+<p style="font-size:32px;color:#1D1D1F;text-align:center"><span style="color:#B07A1E;font-weight:600">Policy Analyst:</span> the denial cites a rule the plan removed on 01/01/2026.</p>
 </div>
-<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
-<div style="width:290px;display:flex;flex-direction:column;gap:10px;border:2px dashed #1F6F5C;border-radius:12px;padding:14px">
-<p style="font-size:24px;font-weight:600;color:#1F6F5C">in parallel</p>
-<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">Policy Analyst</p></div>
-<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">Evidence Researcher</p></div>
-</div>
-<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
-<div style="width:420px;display:flex;flex-direction:column;gap:10px;border:2px dashed #B4621A;border-radius:12px;padding:14px">
-<p style="font-size:24px;font-weight:600;color:#9A520F">revision loop, up to 3 rounds</p>
-<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">Writer ⇄ Adversarial Reviewer</p></div>
-<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">∥ Fact Checker</p></div>
-</div>
-<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
-<div style="flex:1;display:flex;flex-direction:column;gap:6px;background:#0E2421;border-radius:12px;padding:20px">
-<p style="font-size:26px;font-weight:600;color:#F5F3EC">Packager</p>
-<p style="font-size:24px;color:#BFD3CD">local, no model</p>
-</div>
-</div>
-<div style="display:flex;gap:32px">
-<div style="flex:1;display:flex;flex-direction:column;gap:10px;border-top:3px solid #1F6F5C;padding:20px 0 0 0">
-<h3 style="font-size:32px;font-weight:600">Planning</h3>
-<p style="font-size:24px;line-height:1.45;color:#4A5652">The Planner picks the strategy and the appeal type, sends each analyst its own questions, and rates merit. Revising stops early when the reviewer scores 3/10 or lower.</p>
-</div>
-<div style="flex:1;display:flex;flex-direction:column;gap:10px;border-top:3px solid #1F6F5C;padding:20px 0 0 0">
-<h3 style="font-size:32px;font-weight:600">Handoffs</h3>
-<p style="font-size:24px;line-height:1.45;color:#4A5652">Each agent writes a schema-checked artifact to a shared run state. The next agent reads only what it needs. Invalid output goes back to the agent with the error.</p>
-</div>
-<div style="flex:1;display:flex;flex-direction:column;gap:10px;border-top:3px solid #1F6F5C;padding:20px 0 0 0">
-<h3 style="font-size:32px;font-weight:600">Error recovery</h3>
-<p style="font-size:24px;line-height:1.45;color:#4A5652">Retries with backoff, tested with injected faults (API timeout, search outage, malformed handoff). Every stage is checkpointed, so a crashed run resumes where it stopped.</p>
-</div>
-</div>
-<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6A746F">claimback/orchestrator.py · state.py · schemas.py · Jury ② agent design</p>
-<aside>Jury criterion 2: planning, handoffs and error recovery. The orchestrator runs a fixed, auditable route, which is deliberate for safety. The Planner decides strategy and appeal type, asks the Policy Analyst and the Evidence Researcher separate questions, and both run in parallel. The Writer drafts, then the Adversarial Reviewer plays the insurer while the Fact Checker traces every claim to a source, also in parallel. Revisions are capped at three rounds, and a reviewer score of 3/10 or lower stops revising, because polishing won’t fix a weak case. Recovery is tested, not claimed: chaos mode fails the first attempt of three stages, and in the recorded run we also killed the process mid-draft and resumed from the checkpoint.</aside>
+<aside>[1:08–1:19 · say] ClaimBack does the fighting. Seven Claude agents take Rosa’s case. Intake strips her identifiers first. Two analysts work in parallel, and the Policy Analyst catches the removed rule.
+
+[Background, don’t read] Source line (removed from the slide): Rosa is a synthetic patient; her documents are marked SYNTHETIC TEST DOCUMENT. Jury criterion 2: planning, handoffs, error recovery. Rosa Delgado (65), Evergreen Mutual and the letter are from cases/cgm-denial, marked SYNTHETIC TEST DOCUMENT. The denial cites an intensive-insulin rule; Rosa takes once-daily long-acting insulin. Seven Claude agents (Intake, Planner, Policy Analyst, Evidence Researcher, Writer, Adversarial Reviewer, Fact Checker) plus a local Packager with no model call. The orchestrator runs a fixed, auditable route, deliberately, for safety. Each agent writes a schema-checked artifact to shared run state; invalid output goes back with the error. Retries with backoff are tested with injected faults; every stage is checkpointed, so a crashed run resumes where it stopped. The Planner rates merit; revising stops early when the reviewer scores 3/10 or lower, and is capped at 3 rounds. The Policy Analyst found the intensive-insulin criterion was removed in the plan’s 01/01/2026 revision and the denial never addressed the hypoglycemia pathway. Web search sees only a de-identified clinical summary.</aside>
 </section>

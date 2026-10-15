@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ClaimBack pitch deck (print)</title>
+<style>
+  /* Full-size pages for PDF export: one 1920x1080 slide per page. Base rules match index.html. */
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #888; }
+  .page { position: relative; width: 1920px; height: 1080px; overflow: hidden; break-after: page; }
+  .page:last-child { break-after: auto; }
+  .page > section { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; box-sizing: border-box; }
+  section, section * { margin: 0; box-sizing: border-box; }
+  section ol, section ul { padding-left: 36px; }
+  section h1, section h2, section h3 { font-weight: 600; }
+  section table { border-collapse: collapse; width: 100%; }
+  section th, section td { border: 1px solid #cfcabd; padding: .35em .6em; text-align: left; vertical-align: top; }
+  section aside { display: none; }
+  x-shape { display: block; flex: none; }
+  x-shape[kind="arrow-right"] { clip-path: polygon(0 30%, 60% 30%, 60% 0, 100% 50%, 60% 100%, 60% 70%, 0 70%); }
+  x-shape[kind="ellipse"] { border-radius: 50%; }
+</style>
+</head>
+<body>
+<script>
+// ?only=cover,product renders a subset
+const only = new URLSearchParams(location.search).get("only");
+(async () => {
+  const deck = await (await fetch("deck.json")).json();
+  for (const face of Object.values(deck.faces || {})) {
+    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = face.href; document.head.appendChild(l);
+  }
+  const ids = only ? only.split(",") : deck.order;
+  for (const id of ids) {
+    const page = document.createElement("div");
+    page.className = "page"; page.dataset.id = id;
+    page.innerHTML = await (await fetch(`slides/${id}.html`)).text();
+    document.body.appendChild(page);
+  }
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  document.body.dataset.ready = "1";
+})();
+</script>
+</body>
+</html>

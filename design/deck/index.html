@@ -23,7 +23,7 @@
 
   /* The slide canvas: 1920x1080, every style inline, scaled to the frame */
   .frame > section { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
-  section, section * { margin: 0; }
+  section, section * { margin: 0; box-sizing: border-box; }
   section ol, section ul { padding-left: 36px; }
   section h1, section h2, section h3 { font-weight: 600; }
   section table { border-collapse: collapse; width: 100%; }
