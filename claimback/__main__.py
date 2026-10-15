@@ -57,6 +57,9 @@ def main() -> int:
     except StopRequested as e:
         print(f"\n[stopped after stage '{e}'. Run `python -m claimback resume <run_id>` to continue]")
         return 2
+    except KeyboardInterrupt:
+        print("\n[interrupted. Progress is checkpointed; continue with `python -m claimback resume <run_id>`]")
+        return 130
     except FatalError as e:
         print(f"\n[run stopped: {e}]")
         if "workspace" in str(e):
