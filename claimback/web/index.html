@@ -340,7 +340,10 @@ function apply(e, opts = {}) {
       S.packet = true; setPacket(true);
       setNode("packager", "done", "✓ packet ready");
       flash("e-reviewer-packager", 3000); flash("e-fact_checker-packager", 3000);
-      setNow("Appeal packet ready for human review", false);
+      const v = S.merit && S.merit.final;
+      setNow(v === "weak" ? "Honest assessment ready: this appeal is unlikely to succeed, see the alternatives"
+           : v === "possible" ? "Appeal packet ready: worth appealing once the flagged gaps are closed"
+           : "Appeal packet ready for human review", false);
     }
     if (/approved by reviewer/.test(m)) setNow("Draft approved by the Adversarial Reviewer and the Fact Checker", opts.live);
   }
