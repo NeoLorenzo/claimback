@@ -36,6 +36,7 @@ def main() -> int:
     if getattr(args, "chaos", False):
         os.environ["CLAIMBACK_CHAOS"] = "1"
 
+    from .llm import FatalError
     from .orchestrator import StageFailed, StopRequested, orchestrate
     from .state import RUNS_DIR
 
@@ -56,6 +57,11 @@ def main() -> int:
     except StopRequested as e:
         print(f"\n[stopped after stage '{e}'. Run `python -m claimback resume <run_id>` to continue]")
         return 2
+    except FatalError as e:
+        print(f"\n[run stopped: {e}]")
+        if "workspace" in str(e):
+            print("Fix: add ANTHROPIC_WORKSPACE_ID=wrkspc_... to .env, or create an API key inside a workspace.")
+        return 1
     except StageFailed as e:
         print(f"\n[run failed at stage '{e}'. Fix the cause, then resume]")
         return 1

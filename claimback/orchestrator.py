@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import agents, packager, redact
-from .llm import AgentError
+from .llm import AgentError, FatalError
 from .log import emit, set_log_file
 from .schemas import PHIScan
 from .state import RunState
@@ -61,6 +61,10 @@ def run_stage(state: RunState, name: str, agent: str, fn, *, retries: int = 3,
             if stop_after == name:
                 raise StopRequested(name)
             return out
+        except FatalError as e:
+            state.fail(name, str(e))
+            emit(agent, "error", f"{name}: {e} · not retryable, stopping run")
+            raise
         except AgentError as e:
             state.fail(name, str(e))
             if attempt < retries:

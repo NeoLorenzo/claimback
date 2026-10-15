@@ -32,10 +32,21 @@ class AgentError(Exception):
     """A recoverable agent failure (bad output, refusal, truncation, API error)."""
 
 
+class FatalError(Exception):
+    """A failure retrying can't fix (bad key, missing workspace, invalid request)."""
+
+
+NON_RETRYABLE = (anthropic.BadRequestError, anthropic.AuthenticationError,
+                 anthropic.PermissionDeniedError, anthropic.NotFoundError)
+
+
 def client() -> anthropic.Anthropic:
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(max_retries=3)
+        headers = {}
+        if os.environ.get("ANTHROPIC_WORKSPACE_ID"):  # for keys not scoped to a workspace
+            headers["anthropic-workspace-id"] = os.environ["ANTHROPIC_WORKSPACE_ID"]
+        _client = anthropic.Anthropic(max_retries=3, default_headers=headers)
     return _client
 
 
@@ -59,8 +70,10 @@ def call(agent: str, system: str, user: str | list, schema: type[BaseModel],
         )
     except (anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.InternalServerError) as e:
         raise AgentError(f"{type(e).__name__}: {e}") from e
+    except NON_RETRYABLE as e:
+        raise FatalError(f"API {e.status_code}: {_msg(e)}") from e
     except anthropic.APIStatusError as e:
-        raise AgentError(f"API {e.status_code}: {e.message}") from e
+        raise AgentError(f"API {e.status_code}: {_msg(e)}") from e
 
     _log_usage(agent, resp)
     if resp.stop_reason == "refusal":
@@ -99,8 +112,10 @@ def research(agent: str, system: str, user: str, allowed_domains: list[str]) -> 
             if resp.stop_reason != "pause_turn":
                 break
             messages.append({"role": "assistant", "content": resp.content})
+    except NON_RETRYABLE as e:
+        raise FatalError(f"API {e.status_code}: {_msg(e)}") from e
     except anthropic.APIStatusError as e:
-        raise AgentError(f"API {e.status_code}: {e.message}") from e
+        raise AgentError(f"API {e.status_code}: {_msg(e)}") from e
     except anthropic.APIConnectionError as e:
         raise AgentError(f"connection: {e}") from e
 
@@ -113,6 +128,13 @@ def research(agent: str, system: str, user: str, allowed_domains: list[str]) -> 
     if not text:
         raise AgentError("research returned no text")
     return text
+
+
+def _msg(e: anthropic.APIStatusError) -> str:
+    try:
+        return e.body["error"]["message"]
+    except (TypeError, KeyError):
+        return e.message
 
 
 def _log_usage(agent: str, resp) -> None:
