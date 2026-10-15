@@ -214,6 +214,21 @@ blockquote.q cite { display: block; margin-top: 4px; font-style: normal; color: 
 .ob .ofoot { padding: 10px 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .ob .ofoot .note { color: var(--muted); font-size: 12.5px; }
 .ob details summary { padding: 8px 14px; cursor: pointer; color: var(--muted); font-size: 13px; }
+.ob .letter { padding: 14px 18px; max-height: 460px; overflow: auto; font: 15px/1.55 Georgia, "Times New Roman", serif;
+  background: color-mix(in srgb, var(--bg) 55%, var(--panel-2)); border-bottom: 1px solid var(--line); }
+.ob .letter table { border-collapse: collapse; font: 13.5px/1.45 system-ui, sans-serif; margin: 8px 0; }
+.ob .letter td, .ob .letter th { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+.ob .letter h1, .ob .letter h2, .ob .letter h3 { font-family: system-ui, sans-serif; font-size: 15px; margin: 14px 0 6px; }
+.ob .notes { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted);
+  background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.ob .notes b { color: var(--accent); font-weight: 600; }
+.ob .notes div.n { white-space: pre-wrap; margin-top: 6px; max-height: 160px; overflow: auto; }
+.ob .blanks { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px;
+  background: color-mix(in srgb, var(--err) 10%, transparent); }
+.ob .blanks b { color: var(--err); font-weight: 600; }
+.ob .blanks ul { margin: 6px 0 0; padding-left: 18px; }
+.ob textarea.ed { width: 100%; min-height: 380px; border: 0; border-bottom: 1px solid var(--line); padding: 12px 14px;
+  background: var(--bg); color: var(--text); font: 13px/1.5 var(--mono); resize: vertical; box-sizing: border-box; }
 .ob .issues { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 13.5px;
   background: color-mix(in srgb, var(--warn) 9%, transparent); color: #f1e6c8; }
 .ob .issues b { color: var(--warn); font-weight: 600; }
@@ -811,6 +826,9 @@ function taskAction(t, c) {
 function renderCase() {
   const c = C.data;
   if (!c) return;
+  // Live refreshes re-render the panel; keep whatever is being typed in an open draft editor
+  const typing = C.editing && $("ed-" + C.editing) ? $("ed-" + C.editing).value : null;
+  queueMicrotask(() => { if (typing != null && $("ed-" + C.editing)) $("ed-" + C.editing).value = typing; });
   const corrById = Object.fromEntries((c.correspondence || []).map((m) => [m.id, m]));
   const uploadsById = Object.fromEntries((c.uploads || []).map((u) => [u.id, u]));
   const cite = (id) => id ? `<cite>Insurer's exact words · ${esc(id)}${corrById[id] ? " · " + esc(corrById[id].subject || "") : ""}</cite>` : "";
@@ -873,7 +891,7 @@ function renderCase() {
       <div class="subj">${esc(m.subject || "(no subject)")}</div>
       ${a ? `<div class="sum"><span class="by">Correspondence agent</span>${esc(a.summary)}</div>` : ""}
       ${a && a.decision && a.decision.quote ? `<blockquote class="q" style="margin-top:8px">“${esc(a.decision.quote)}”</blockquote>` : ""}
-      ${out && m.message_id ? `<div class="mh" style="margin-top:4px"><span class="mono">Message-ID ${esc(m.message_id)}</span></div>` : ""}
+      ${out && m.outbox ? `<div class="mh" style="margin-top:4px"><span class="mono" title="${esc(m.message_id || "")}">from draft ${esc(m.outbox)}</span></div>` : ""}
     </div>`;
   }).join("") : `<div class="empty">No messages yet. The first letter goes out when you approve it.</div>`;
 
@@ -884,8 +902,11 @@ function renderCase() {
     const pending = o.status === "awaiting_approval";
     const [stText, stCls] = OUTBOX_STATUS[o.status] || [human(o.status), "action_required"];
     const ok = allow.has(String(o.to || "").toLowerCase());
-    const body = o.body == null ? `<div class="empty" style="padding:10px 14px">Draft body not available</div>` : `<pre class="body">${esc(o.body)}</pre>`;
-    const fc = o.fact_check, issues = o.open_issues || [];
+    const editing = C.editing === o.id;
+    const body = o.body == null ? `<div class="empty" style="padding:10px 14px">Draft body not available</div>`
+      : editing ? `<textarea class="ed" id="ed-${esc(o.id)}">${esc(o.body)}</textarea>`
+      : o.body_html ? `<div class="letter">${o.body_html}</div>` : `<pre class="body">${esc(o.body)}</pre>`;
+    const fc = o.fact_check, issues = o.open_issues || [], blanks = o.blanks || [], notes = o.reviewer_notes || [];
     return `<div class="ob${pending ? " pending" : ""}" id="ob-${esc(o.id)}">
       <div class="oh"><span class="k">${esc(human(o.kind))}</span><span class="badge muted">${esc(o.id)}</span>
         <span class="pill st-${stCls}">${esc(stText)}</span></div>
@@ -893,15 +914,22 @@ function renderCase() {
         <span class="l">To</span><span><span class="to">${esc(o.to || "")}</span>
           ${ok ? `<span class="allow">✓ on this case's insurer allow-list</span>` : `<span class="deny">✗ not on the insurer allow-list</span>`}</span>
         <span class="l">Subject</span><span>${esc(o.subject || "")}</span>
-        ${o.in_reply_to ? `<span class="l">Thread</span><span class="mono" style="font-size:12px">in reply to ${esc(o.in_reply_to)}</span>` : ""}
+        ${o.in_reply_to ? (() => { const src = (c.correspondence || []).find((m) => m.message_id === o.in_reply_to);
+          return `<span class="l">Thread</span><span title="${esc(o.in_reply_to)}">in reply to ${src ? `${esc(src.id)} · ${esc(src.subject || "")}` : "the insurer's email"}</span>`; })() : ""}
         ${(o.attachments || []).length ? `<span class="l">Attach</span><span>${o.attachments.map((uid) =>
           `<span class="badge muted">📎 ${esc((uploadsById[uid] || {}).name || uid)}</span>`).join(" ")}</span>` : ""}
         ${fc ? `<span class="l">Checked</span><span><span class="badge ${fc.verified === fc.claims ? "conf" : "unconf"}">Fact Checker: ${esc(fc.verified)}/${esc(fc.claims)} claims verified</span></span>` : ""}
       </div>
       ${issues.length ? `<div class="issues"><b>Check these yourself before sending</b>
         <ul>${issues.map((i) => `<li>${esc(i)}</li>`).join("")}</ul></div>` : ""}
+      ${pending && blanks.length ? `<div class="blanks"><b>Fill in before sending</b> · Approve stays off until these are gone
+        <ul>${blanks.map((b) => `<li><code>${esc(b)}</code></li>`).join("")}</ul></div>` : ""}
+      ${pending && notes.length ? `<div class="notes"><b>Notes for you from the Writer</b> · not part of the email
+        ${notes.map((n) => `<div class="n">${esc(n)}</div>`).join("")}</div>` : ""}
       ${pending ? body + `<div class="ofoot"><span class="note">Nothing leaves this computer until you click.</span>
-          <button class="send" data-approve="${esc(o.id)}" ${ok ? "" : "disabled"}>Approve &amp; send</button></div>`
+          ${editing ? `<button data-cancel-edit>Cancel</button><button class="go" data-save="${esc(o.id)}">Save draft</button>`
+                    : `<button data-edit="${esc(o.id)}">Edit</button>`}
+          <button class="send" data-approve="${esc(o.id)}" ${ok && !blanks.length && !editing ? "" : "disabled"}>Approve &amp; send</button></div>`
         : `<details><summary>Show the letter</summary>${body}</details>`}
     </div>`;
   }).join("") : `<div class="empty">No drafts</div>`;
@@ -937,6 +965,18 @@ function wireCaseButtons() {
     el.classList.remove("hl"); void el.offsetWidth; el.classList.add("hl");
   };
   for (const b of document.querySelectorAll("[data-approve]")) b.onclick = () => approve(b.dataset.approve);
+  for (const b of document.querySelectorAll("[data-edit]")) b.onclick = () => { C.editing = b.dataset.edit; renderCase(); };
+  for (const b of document.querySelectorAll("[data-cancel-edit]")) b.onclick = () => { C.editing = null; renderCase(); };
+  for (const b of document.querySelectorAll("[data-save]")) b.onclick = async () => {
+    const id = b.dataset.save;
+    b.disabled = true;
+    try {
+      const r = await postCase("edit", { outbox_id: id, body: $("ed-" + id).value });
+      C.editing = null;
+      toast(r.blanks && r.blanks.length ? `Saved · ${r.blanks.length} blank(s) left to fill` : "Saved · ready to send", "ok");
+    } catch (err) { toast("Not saved: " + err.message, "err"); b.disabled = false; return; }
+    refreshCase();
+  };
   for (const b of document.querySelectorAll("[data-confirm]")) b.onclick = () => confirmOutcome(b.dataset.confirm, b);
   for (const b of document.querySelectorAll("[data-upload]")) {
     const input = document.querySelector(`[data-file="${CSS.escape(b.dataset.upload)}"]`);
@@ -960,8 +1000,10 @@ function approve(outboxId) {
   $("dlgTo").textContent = o.to; $("dlgTo2").textContent = o.to; $("dlgSubj").textContent = o.subject || "";
   const dlg = $("sendDlg");
   dlg.returnValue = "";
-  dlg.onclose = async () => {
-    if (dlg.returnValue !== "send") return;
+  dlg.onclose = null;
+  // Send straight from the button: the dialog's close event can be delayed while the page isn't rendering
+  $("dlgSend").onclick = (e) => { e.preventDefault(); dlg.close("send"); send(); };
+  const send = async () => {
     const btn = document.querySelector(`[data-approve="${CSS.escape(outboxId)}"]`);
     if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
     try {

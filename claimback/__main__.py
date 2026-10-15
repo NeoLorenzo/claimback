@@ -60,7 +60,7 @@ def main() -> int:
     ap.add_argument("case_id"); ap.add_argument("outbox_id")
     cf = sub.add_parser("confirm", help="confirm the insurer's decision and close the case")
     cf.add_argument("case_id"); cf.add_argument("task_id")
-    for sp in (oc, w, si, ap):
+    for sp in (oc, w, si, ap, up, cf):
         sp.add_argument("--fake", action="store_true", help="use the local fake mailbox")
     args = p.parse_args()
 

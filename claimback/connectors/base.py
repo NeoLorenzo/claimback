@@ -31,6 +31,7 @@ class OutboundEmail:
     in_reply_to: str | None = None
     simulated: bool = False
     attachments: list[tuple[str, bytes, str]] = field(default_factory=list)  # (filename, data, mime type)
+    html: str | None = None  # optional formatted version of body
     message_id: str = ""
 
     def to_message(self) -> EmailMessage:
@@ -48,6 +49,9 @@ class OutboundEmail:
         if self.simulated:
             msg[SIM_HEADER] = "true"
         msg.set_content(self.body)
+        if self.html:
+            msg.add_alternative(f"<html><body style=\"font-family:Georgia,serif;line-height:1.5\">{self.html}</body></html>",
+                                subtype="html")
         for name, data, mime in self.attachments:
             maintype, _, subtype = mime.partition("/")
             msg.add_attachment(data, maintype=maintype, subtype=subtype or "octet-stream", filename=name)

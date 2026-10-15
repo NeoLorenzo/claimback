@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from . import cases as cases_mod
+from . import letters
 from .cases import CASEFILES_DIR
 from .state import RUNS_DIR
 
@@ -113,6 +114,10 @@ def _case_detail(d: Path) -> dict:
     for o in c.get("outbox", []):
         body = (d / o.get("body_file", "")).resolve()
         o["body"] = body.read_text(encoding="utf-8") if body.is_file() and body.is_relative_to(root) else None
+        if o["body"] is not None:
+            # Preview exactly what will be emailed: send-time dates filled, markdown rendered (escaped)
+            o["body_html"] = letters.to_html(letters.fill_send_time(o["body"]))
+            o["blanks"] = letters.unresolved_blanks(o["body"]) if o.get("status") == "awaiting_approval" else []
     c["event_count"] = len(_read_events("", path=d / "events.jsonl"))
     return c
 
@@ -235,10 +240,11 @@ class Handler(BaseHTTPRequestHandler):
         d = _case_dir(case_id)
         if not d:
             return self._json({"error": "no such case"}, 404)
-        fn_name = {"approve": "approve_outbox", "upload": "add_upload", "confirm-outcome": "confirm_outcome"}.get(action)
+        fn_name = {"approve": "approve_outbox", "upload": "add_upload", "confirm-outcome": "confirm_outcome",
+                   "edit": "update_outbox"}.get(action)
         if not fn_name:
             return self._json({"error": "not found"}, 404)
-        raw = self._read_body(MAX_UPLOAD * 4 // 3 + 65536 if action == "upload" else 65536)
+        raw = self._read_body(MAX_UPLOAD * 4 // 3 + 65536 if action == "upload" else 262144)
         if raw is None:
             return
         fn = _backend(fn_name)
@@ -256,6 +262,8 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(raw or b"{}")
             if action == "approve":
                 return self._json({"ok": True, "message_id": fn(d.name, body.get("outbox_id", ""))})
+            if action == "edit":
+                return self._json({"ok": True, **fn(d.name, body.get("outbox_id", ""), str(body.get("body", "")))})
             fn(d.name, body.get("task_id", ""))
             return self._json({"ok": True})
         except refused as e:  # valid request, but the case's state or allow-list says no

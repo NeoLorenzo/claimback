@@ -173,8 +173,8 @@ def apply_analysis(case: Case, entry: dict, a: dict) -> None:
             case.set_status("awaiting_insurer", f"{cid} confirms receipt; this is not a decision")
     elif kind == "evidence_request":
         for item in a["requested_items"]:
-            due = f" by {item['due_date']}" if item["due_date"] else ""
-            case.add_task("upload_evidence", f"Provide: {item['item']}{due}", owner="user",
+            # The due date is a separate field (the panel shows it with days left), not part of the title
+            case.add_task("upload_evidence", f"Provide: {item['item']}", owner="user",
                           supplier=item["owner"], due_date=item["due_date"], quote=item["quote"], correspondence=cid)
         case.set_status("awaiting_human", f"the insurer asked for {len(a['requested_items'])} item(s) in {cid}")
         case.emit("case_worker", "warn", "Waiting for you: the insurer needs more information",

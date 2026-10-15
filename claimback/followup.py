@@ -89,7 +89,9 @@ def draft_followup(case: Case, source_cid: str) -> None:
 
     open_issues = [c["explanation"] for c in fc["checks"] if not c["supported"]] + fc["untracked_claims"]
     oid = f"O{len(case.outbox) + 1}"
-    letter = redact.rehydrate(draft["letter_markdown"], display)  # identifiers filled back in locally
+    from .letters import split_reviewer_notes
+    letter, notes = split_reviewer_notes(redact.rehydrate(draft["letter_markdown"], display))  # filled back in locally
+    notes += [redact.rehydrate(n, display) for n in draft.get("reviewer_notes", [])]
     (case.dir / "outbox").mkdir(exist_ok=True)
     (case.dir / "outbox" / f"{oid}.md").write_text(letter, encoding="utf-8")
     case.outbox.append({
@@ -98,7 +100,7 @@ def draft_followup(case: Case, source_cid: str) -> None:
         "body_file": f"outbox/{oid}.md", "in_reply_to": entry["message_id"],
         "attachments": [u["id"] for u in uploads], "status": "awaiting_approval",
         "fact_check": {"verified": len(fc["checks"]) - len(bad), "claims": len(fc["checks"])},
-        "open_issues": open_issues, "created": datetime.now(timezone.utc).isoformat(),
+        "open_issues": open_issues, "reviewer_notes": notes, "created": datetime.now(timezone.utc).isoformat(),
     })
     case.pending_followups.remove(source_cid)
     note = f" · {len(open_issues)} statement(s) to check yourself" if open_issues else ""

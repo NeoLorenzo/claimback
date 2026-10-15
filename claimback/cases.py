@@ -160,12 +160,14 @@ def open_case(run_id: str, insurer_email: str | None = None) -> Case:
         insurer_name=facts["insurer_name"],
     )
     # Real identifiers go back in locally; this draft only leaves the machine after Approve & send
-    body = redact.rehydrate(draft["letter_markdown"], display)
+    from .letters import split_reviewer_notes
+    body, notes = split_reviewer_notes(redact.rehydrate(draft["letter_markdown"], display))
+    notes += [redact.rehydrate(n, display) for n in draft.get("reviewer_notes", [])]
     case.dir.mkdir(parents=True, exist_ok=True)
     (case.dir / "outbox").mkdir(exist_ok=True)
     (case.dir / "outbox" / "O1.md").write_text(body, encoding="utf-8")
     case.outbox.append({"id": "O1", "kind": "initial_appeal", "to": insurer.lower(),
-                        "subject": f"Internal appeal: {case.claim_number}",
+                        "subject": f"Internal appeal: {case.claim_number}", "reviewer_notes": notes,
                         "body_file": "outbox/O1.md", "status": "awaiting_approval", "created": _now()})
     packet = RUNS_DIR / run_id / "output" / "appeal_packet.html"
     case.emit("case_worker", "start", f"case opened from run {run_id} · replies go to {case.reply_address}",
@@ -235,7 +237,11 @@ def approve_outbox(case_id: str, outbox_id: str) -> str:
                                            "insurer list", outbox=outbox_id)
         raise ActionRefused(f"{item['to']} is not an allowed recipient for this case")
 
-    body = (case.dir / item["body_file"]).read_text(encoding="utf-8")
+    from .letters import fill_send_time, to_html, to_plain, unresolved_blanks
+    body = fill_send_time((case.dir / item["body_file"]).read_text(encoding="utf-8"))
+    blanks = unresolved_blanks(body)
+    if blanks:
+        raise ActionRefused("fill in these blanks before sending (use Edit): " + "; ".join(blanks))
     attachments = []
     for uid in item.get("attachments", []):
         up = next(u for u in case.uploads if u["id"] == uid)
@@ -247,7 +253,8 @@ def approve_outbox(case_id: str, outbox_id: str) -> str:
     case.save()
     connector = get_connector()
     sent_id = connector.send(OutboundEmail(
-        from_addr=f"ClaimBack appeal <{mailbox_address()}>", to=item["to"], subject=item["subject"], body=body,
+        from_addr=f"ClaimBack appeal <{mailbox_address()}>", to=item["to"], subject=item["subject"],
+        body=to_plain(body), html=to_html(body),
         reply_to=case.reply_address, in_reply_to=item.get("in_reply_to"), attachments=attachments,
         message_id=item["message_id"]))
     item["status"], item["sent"] = "sent", _now()
@@ -268,6 +275,24 @@ def approve_outbox(case_id: str, outbox_id: str) -> str:
     return sent_id
 
 
+def update_outbox(case_id: str, outbox_id: str, body: str) -> dict:
+    """The human edits a draft before approving it (fill in blanks, change wording)."""
+    case = Case.load(case_id)
+    item = next((o for o in case.outbox if o["id"] == outbox_id), None)
+    if not item or item["status"] != "awaiting_approval":
+        raise ActionRefused(f"{outbox_id} isn't a draft awaiting approval")
+    if not body.strip() or len(body) > 100_000:
+        raise ActionRefused("the draft can't be empty or longer than 100,000 characters")
+    (case.dir / item["body_file"]).write_text(body.rstrip() + "\n", encoding="utf-8")
+    item["edited"] = _now()
+    from .letters import unresolved_blanks
+    left = unresolved_blanks(body)
+    case.emit("case_worker", "info", f"draft {outbox_id} edited by you"
+              + (f" · {len(left)} blank(s) still to fill" if left else " · ready to send"), outbox=outbox_id)
+    case.save()
+    return {"blanks": left}
+
+
 def confirm_outcome(case_id: str, task_id: str) -> None:
     """A human confirms the insurer's decision; only then does the case close."""
     case = Case.load(case_id)
@@ -279,6 +304,9 @@ def confirm_outcome(case_id: str, task_id: str) -> None:
     case.outcome = {"result": decision.get("outcome", "confirmed"), "quote": decision.get("quote", task.get("quote")),
                     "source": task.get("correspondence"), "confirmed_by": "user", "confirmed": _now()}
     case.complete_task(task_id, "outcome confirmed by you")
+    for t in case.open_tasks():  # anything still open is moot once the outcome is decided
+        t["status"], t["completed"] = "withdrawn", _now()
+        case.emit("case_worker", "info", f"task {t['id']} withdrawn: the case has an outcome", task=t["id"])
     case.set_status("closed", f"outcome confirmed: {case.outcome['result']}")
     case.emit("case_worker", "done", f"case closed · outcome: {case.outcome['result']} (confirmed by you)",
               outcome=case.outcome["result"])
