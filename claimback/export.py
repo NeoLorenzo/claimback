@@ -44,6 +44,8 @@ def _scrubber():
         if isinstance(value, str):
             for prefix in prefixes:
                 value = value.replace(prefix, "")
+            # Runs recorded in another checkout carry its path; drop anything local before runs/ or casefiles/
+            value = re.sub(r"[A-Za-z]:[\\/]+(?:[^\\/\s\"]+[\\/]+)*?(?=(?:runs|casefiles)[\\/])", "", value)
             if local and local != "claimback.demo":
                 value = re.sub(rf"\b{re.escape(local)}(?=[+@])", "claimback-inbox", value, flags=re.IGNORECASE)
             return value

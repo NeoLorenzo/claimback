@@ -722,7 +722,7 @@ function apply(e, opts = {}) {
   ns.recent.push(e); if (ns.recent.length > 40) ns.recent.shift();
 
   // model calls: tokens, cost, time, per agent and per stage
-  if (d.input_tokens !== undefined) {
+  if (d.input_tokens !== undefined && (d.type === "model_call" || d.type === undefined)) {  // not the run/case summary totals
     const cost = d.cost_usd !== undefined ? d.cost_usd : d.input_tokens * 4e-6 + d.output_tokens * 20e-6;
     S.calls++; S.tin += d.input_tokens; S.tout += d.output_tokens; S.cost += cost;
     ns.calls++; ns.tin += d.input_tokens; ns.tout += d.output_tokens; ns.cost += cost; ns.secs += d.duration_s || 0;
@@ -979,7 +979,7 @@ function addRow(e, fresh) {
   const a = AGENTS[node] || AGENTS[e.agent] || { full: e.agent, color: "#aaa" };
   const d = e.data || {};
   let cls = e.kind;
-  if (d.input_tokens !== undefined) cls = "usage";
+  if (d.input_tokens !== undefined && d.type !== "run_summary" && d.type !== "case_summary") cls = "usage";
   if (e.message.startsWith("web search")) cls = "search";
   if (e.agent === "insurer_sim" || d.simulated === true) cls += " sim";
   const row = document.createElement("div");
