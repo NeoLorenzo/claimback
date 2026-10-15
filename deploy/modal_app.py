@@ -88,7 +88,7 @@ def start_run(job_id: int, owner: str, run_id: str, mode: str, sample: str | Non
 
 
 # ---- case changes, strictly one at a time ------------------------------------------------
-@app.function(**WORKER, timeout=20 * 60, max_containers=1)
+@app.function(**WORKER, timeout=20 * 60, max_containers=1, scaledown_window=600)  # stay warm between clicks
 def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
     import time
     _setup()
@@ -176,7 +176,7 @@ def poll() -> None:
 
 
 # ---- HTTPS API for the web app ------------------------------------------------------------
-@app.function(image=image, secrets=[secret], timeout=60)
+@app.function(image=image, secrets=[secret], timeout=60, scaledown_window=600)
 @modal.concurrent(max_inputs=50)
 @modal.asgi_app()
 def api():
