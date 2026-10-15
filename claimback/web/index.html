@@ -67,7 +67,7 @@ svg#flow { display: block; width: 100%; height: auto; padding: 8px 8px 4px; }
 .orch text { fill: var(--muted); font-size: 15px; }
 .orch text b, .orch .strong { fill: var(--text); font-weight: 600; }
 
-#log { height: 46vh; min-height: 280px; overflow-y: auto; border-top: 1px solid var(--line);
+#log, #caseLog { height: 46vh; min-height: 280px; overflow-y: auto; border-top: 1px solid var(--line);
   font-family: var(--mono); font-size: 13px; padding: 6px 0; scroll-behavior: smooth; }
 .row { display: grid; grid-template-columns: 58px 168px 18px 1fr; gap: 8px; padding: 3px 16px; align-items: baseline; }
 .row .t { color: var(--dim); text-align: right; }
@@ -112,17 +112,160 @@ aside { display: flex; flex-direction: column; gap: 16px; }
 #packetBtn { width: 100%; padding: 12px; font-weight: 600; }
 .guard { font-size: 13px; color: var(--muted); }
 .guard li { margin: 4px 0; }
+
+/* ---------- view tabs ---------- */
+.brand-row { display: flex; align-items: center; gap: 22px; }
+.tabs { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.tabs button { border: 0; background: transparent; color: var(--muted); padding: 6px 14px; border-radius: 7px; }
+.tabs button.on { background: var(--panel-2); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+.tabs .count { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; border-radius: 9px;
+  background: var(--warn); color: #1a1405; font-size: 12px; font-weight: 700; text-align: center; }
+
+/* ---------- cases view ---------- */
+#casesView { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 16px; padding: 16px 24px 24px; }
+@media (max-width: 1000px) { #casesView { grid-template-columns: 1fr; padding: 12px 16px; } }
+.caselist { padding: 12px; align-self: start; position: sticky; top: 16px; }
+.caselist h2, .cpanel h2 { margin: 0 0 10px; font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.citem { display: block; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 6px; border-radius: 10px;
+  background: var(--panel-2); border: 1px solid var(--line); }
+.citem.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--panel-2)); }
+.citem .n { font-weight: 600; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.citem .s { color: var(--muted); font-size: 12px; font-family: var(--mono); margin: 2px 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  white-space: nowrap; color: var(--pc, var(--muted)); background: color-mix(in srgb, var(--pc, var(--muted)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pc, var(--muted)) 40%, transparent); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--pc, var(--muted)); }
+.pill.nodot::before { display: none; }
+.pill.st-awaiting_human { --pc: var(--warn); }
+.pill.st-awaiting_insurer { --pc: var(--accent); }
+.pill.st-action_required { --pc: var(--loop); }
+.pill.st-closed { --pc: var(--ok); }
+.pill.big { font-size: 14px; padding: 4px 14px; }
+.badge { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  color: var(--bc, var(--muted)); background: color-mix(in srgb, var(--bc, var(--muted)) 14%, transparent); }
+.badge.sim { --bc: var(--loop); } .badge.untrusted { --bc: var(--err); } .badge.type { --bc: #22d3ee; }
+.badge.unconf { --bc: var(--warn); } .badge.conf { --bc: var(--ok); } .badge.inj { --bc: var(--err); }
+.badge.muted { --bc: var(--dim); color: var(--muted); }
+
+#caseMain { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.casehead { padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; }
+.casehead .title { font-size: 21px; font-weight: 650; letter-spacing: -.01em; }
+.casehead .meta { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+.casehead .meta code { font-family: var(--mono); color: var(--text); font-size: 13px; }
+.casehead .right { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.stage { color: var(--muted); font-size: 13.5px; }
+.stage b { color: var(--text); font-weight: 600; }
+
+.wait { border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line)); border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--warn) 13%, var(--panel)), var(--panel)); padding: 16px 20px; }
+.wait.flash { animation: waitflash 1.6s ease-out 2; }
+@keyframes waitflash { 30% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--warn) 45%, transparent); } }
+.wait > h2 { margin: 0 0 12px; font-size: 18px; color: var(--warn); display: flex; align-items: center; gap: 10px; }
+.wait > h2 .bell { width: 10px; height: 10px; border-radius: 50%; background: var(--warn); animation: blink 1.2s infinite; }
+.wait > h2 small { color: var(--muted); font-weight: 400; font-size: 13.5px; }
+.wtasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr)); gap: 12px; }
+.wtask { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.wtask .tt { font-weight: 600; }
+.wtask .due { font-size: 13px; color: var(--warn); font-variant-numeric: tabular-nums; }
+.wtask .due.late { color: var(--err); }
+.wtask .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: auto; }
+.wtask .note { font-size: 12.5px; color: var(--muted); }
+.wtask .uploaded { font-size: 12.5px; color: var(--ok); font-family: var(--mono); }
+blockquote.q { margin: 0; padding: 8px 12px; border-left: 3px solid var(--warn); background: color-mix(in srgb, var(--bg) 60%, transparent);
+  border-radius: 0 6px 6px 0; font-size: 13.5px; color: #f1e6c8; }
+blockquote.q cite { display: block; margin-top: 4px; font-style: normal; color: var(--dim); font-size: 12px; }
+.allclear { color: var(--muted); padding: 14px 20px; display: flex; gap: 10px; align-items: center; }
+.allclear .ok { color: var(--ok); font-size: 18px; }
+
+.casegrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 520px); gap: 16px; align-items: start; }
+@media (max-width: 700px) { .msg.in { margin-right: 0; } .msg.out { margin-left: 0; } }
+@media (max-width: 1300px) { .casegrid { grid-template-columns: 1fr; } }
+.casegrid .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.cpanel { padding: 14px 16px; }
+.cpanel .empty { padding: 4px 0; }
+
+.corr { display: flex; flex-direction: column; gap: 10px; }
+.msg { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--panel-2); position: relative; }
+.msg.in { border-left: 3px solid #22d3ee; margin-right: 48px; }
+.msg.out { border-left: 3px solid var(--ok); margin-left: 48px; background: color-mix(in srgb, var(--ok) 5%, var(--panel-2)); }
+.msg.untrusted { border-color: color-mix(in srgb, var(--err) 50%, var(--line)); border-left-color: var(--err); }
+.msg .mh { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; color: var(--muted); }
+.msg .mh .dir { font-weight: 600; color: var(--text); }
+.msg .mh .when { margin-left: auto; font-variant-numeric: tabular-nums; }
+.msg .subj { font-weight: 600; margin: 6px 0 4px; }
+.msg .sum { font-size: 14px; color: #cfd5df; }
+.msg .sum .by { color: #f472b6; font-size: 12px; font-weight: 600; margin-right: 6px; }
+.msg .mono { font-family: var(--mono); font-size: 12.5px; }
+
+.ob { border: 1px solid var(--line); border-radius: 10px; background: var(--panel-2); overflow: hidden; margin-bottom: 10px; }
+.ob.pending { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.ob.pending.hl { animation: waitflash 1.4s ease-out 2; }
+.ob .oh { padding: 10px 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.ob .oh .k { font-weight: 600; }
+.ob .oh .pill { margin-left: auto; }
+.ob .fields { padding: 10px 14px; display: grid; grid-template-columns: 70px 1fr; gap: 4px 10px; font-size: 13.5px; border-bottom: 1px solid var(--line); }
+.ob .fields .l { color: var(--muted); }
+.ob .fields .to { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--text); }
+.ob .fields .allow { color: var(--ok); font-size: 12px; }
+.ob .fields .deny { color: var(--err); font-size: 12px; }
+.ob pre.body { margin: 0; padding: 12px 14px; max-height: 420px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+  font: 13.5px/1.55 Georgia, "Times New Roman", serif; color: #dfe3ea; background: color-mix(in srgb, var(--bg) 40%, var(--panel-2)); }
+.ob .ofoot { padding: 10px 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.ob .ofoot .note { color: var(--muted); font-size: 12.5px; }
+.ob details summary { padding: 8px 14px; cursor: pointer; color: var(--muted); font-size: 13px; }
+button.send { background: #1d4ed8; border-color: #3b82f6; font-weight: 600; padding: 9px 18px; }
+
+.dl { display: flex; flex-direction: column; gap: 8px; }
+.dl .d { padding: 10px 12px; background: var(--panel-2); border-radius: 8px; border: 1px solid var(--line); }
+.dl .d .top { display: flex; gap: 10px; align-items: baseline; }
+.dl .d .date { font-weight: 650; font-variant-numeric: tabular-nums; font-size: 16px; }
+.dl .d .left { color: var(--warn); font-size: 13px; }
+.dl .d .lbl { font-size: 13.5px; margin: 2px 0 4px; }
+.dl .d .src { color: var(--muted); font-size: 12.5px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.tl { display: flex; flex-direction: column; gap: 4px; font-size: 13.5px; }
+.tl .t { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; padding: 6px 8px; border-radius: 6px; align-items: baseline; }
+.tl .t:nth-child(odd) { background: var(--panel-2); }
+.tl .t .id { color: var(--dim); font-family: var(--mono); font-size: 12px; }
+.tl .t.done .ti { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--dim); }
+.tl .t.withdrawn .ti { color: var(--dim); }
+.tl .t .who { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+#caseLog { height: 340px; min-height: 0; border-top: 0; }
+#caseLog .row { grid-template-columns: 50px 130px 18px 1fr; }
+
+dialog#sendDlg { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(560px, 92vw); }
+dialog#sendDlg::backdrop { background: rgba(3, 6, 12, .7); }
+#sendDlg .dh { padding: 18px 22px 6px; font-size: 18px; font-weight: 650; }
+#sendDlg .db { padding: 6px 22px 16px; color: var(--muted); font-size: 14px; }
+#sendDlg .rcpt { margin: 10px 0; padding: 12px 14px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--accent);
+  font: 600 17px var(--mono); color: var(--text); overflow-wrap: anywhere; }
+#sendDlg .df { padding: 12px 22px 18px; display: flex; gap: 10px; justify-content: flex-end; }
+.toast { position: fixed; right: 24px; bottom: 24px; padding: 12px 16px; border-radius: 10px; background: var(--panel-2);
+  border: 1px solid var(--line); box-shadow: 0 8px 30px rgba(0,0,0,.4); font-size: 14px; max-width: 420px; z-index: 10; }
+.toast.err { border-color: var(--err); color: #fecaca; } .toast.ok { border-color: var(--ok); }
 </style>
 </head>
 <body>
 <header>
   <div class="brand">
-    <h1>Claim<span>Back</span></h1>
+    <div class="brand-row">
+      <h1>Claim<span>Back</span></h1>
+      <nav class="tabs live-only" aria-label="View">
+        <button id="tabRun" class="on">Agent run</button>
+        <button id="tabCases">Cases<span class="count" id="waitCount" hidden></span></button>
+      </nav>
+    </div>
     <p>Insurance denial letter in, ready-to-send appeal packet out, built by a team of Claude agents</p>
     <p id="staticNote" class="static-note" hidden>Recorded run with synthetic patient data, replayed from its real agent log.
       <a href="https://github.com/NeoLorenzo/claimback">Source on GitHub</a></p>
   </div>
-  <div class="controls">
+  <div class="controls" id="caseControls" hidden>
+    <span class="stage" id="alertState"></span>
+    <button id="alertBtn">Enable alerts</button>
+  </div>
+  <div class="controls" id="runControls">
     <select id="runSel" aria-label="Run"></select>
     <button id="liveBtn" class="live-only">Watch live</button>
     <button id="replayBtn" class="primary">Replay</button>
@@ -139,7 +282,7 @@ aside { display: flex; flex-direction: column; gap: 16px; }
   </div>
 </header>
 
-<main>
+<main id="runView">
   <section class="card">
     <div id="now"><span class="dot"></span><span class="text">Pick a run, or start one</span><span class="mode" id="modeTxt"></span></div>
     <svg id="flow" viewBox="0 0 1300 350" role="img" aria-label="Agent workflow"></svg>
@@ -181,9 +324,53 @@ aside { display: flex; flex-direction: column; gap: 16px; }
   </aside>
 </main>
 
+<div id="casesView" hidden>
+  <aside class="card caselist">
+    <h2>Cases</h2>
+    <div id="caseList"><div class="empty">No cases yet. Open one with <code>python -m claimback open-case &lt;run_id&gt;</code></div></div>
+  </aside>
+  <section id="caseMain">
+    <div class="card casehead" id="caseHead"><div class="empty">Pick a case</div></div>
+    <div id="waitBox"></div>
+    <div class="casegrid">
+      <div class="col">
+        <div class="card cpanel"><h2>Correspondence</h2><div class="corr" id="corr"></div></div>
+        <div class="card">
+          <div class="cpanel" style="padding-bottom:6px"><h2>Case activity</h2></div>
+          <div id="caseLog" class="log" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card cpanel" id="outboxCard"><h2>Outbox</h2><div id="outbox"></div></div>
+        <div class="card cpanel"><h2>Deadlines</h2><div class="dl" id="deadlines"></div></div>
+        <div class="card cpanel"><h2>All tasks</h2><div class="tl" id="taskList"></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<dialog id="sendDlg">
+  <form method="dialog">
+    <div class="dh">Send this letter?</div>
+    <div class="db">
+      It goes by email to exactly this address, from the case's insurer allow-list:
+      <div class="rcpt" id="dlgTo"></div>
+      <div>Subject: <span id="dlgSubj" style="color:var(--text)"></span></div>
+    </div>
+    <div class="df">
+      <button value="cancel">Cancel</button>
+      <button value="send" class="send" id="dlgSend">Send to <span id="dlgTo2"></span></button>
+    </div>
+  </form>
+</dialog>
+
 <script>
 const AGENTS = {
   orchestrator:        { label: "Orchestrator", full: "Orchestrator", color: "#e6e9ef" },
+  case_worker:         { full: "Case Worker",    color: "#93c5fd" },
+  correspondence:      { full: "Correspondence", color: "#f472b6" },
+  connector:           { full: "Email",          color: "#22d3ee" },
+  insurer_sim:         { full: "Insurer (sim)",  color: "#c084fc" },
   intake:              { label: "Intake",         full: "Intake",               role: "redacts identifiers", color: "#22d3ee", x: 100,  y: 185 },
   planner:             { label: "Planner",        full: "Planner",              role: "plans the appeal",    color: "#c084fc", x: 320,  y: 185 },
   policy_analyst:      { label: "Policy Analyst", full: "Policy Analyst",       role: "plan's own criteria", color: "#60a5fa", x: 540,  y: 110 },
@@ -499,8 +686,354 @@ $("startBtn").onclick = async () => {
   finally { setTimeout(() => ($("startBtn").disabled = false), 2000); }
 };
 
+// ---------- cases (live server only) ----------
+const STATUS_TEXT = { awaiting_human: "Waiting for you", awaiting_insurer: "Waiting for insurer",
+                      action_required: "Agents working", closed: "Closed" };
+const STAGE_NAME = { internal_appeal: "Internal appeal", external_review: "External review" };
+const OUTBOX_STATUS = { awaiting_approval: ["Needs your approval", "awaiting_human"], drafting: ["Drafting", "action_required"],
+                        sending: ["Sending…", "action_required"], sent: ["Sent", "closed"] };
+const human = (s) => String(s || "").replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+const statusPill = (s, big) => `<span class="pill st-${esc(s)}${big ? " big" : ""}">${esc(STATUS_TEXT[s] || human(s))}</span>`;
+function fmtWhen(s) {
+  const d = new Date(s);
+  return isNaN(d) ? esc(s || "") : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+function daysLeft(date) {
+  const ms = Date.parse(date + "T23:59:59") - Date.now();
+  if (isNaN(ms)) return "";
+  const d = Math.ceil(ms / 864e5);
+  return d < 0 ? `${-d} day${d === -1 ? "" : "s"} overdue` : d === 0 ? "due today" : `${d} day${d === 1 ? "" : "s"} left`;
+}
+function toast(text, kind = "") {
+  const t = document.createElement("div");
+  t.className = `toast ${kind}`; t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), kind === "err" ? 7000 : 3500);
+}
+
+const C = { id: null, data: null, source: null, received: 0, baseline: 0, refreshT: null, lastNotify: 0, flashUntil: 0, list: [] };
+
+async function loadCaseList() {
+  try { C.list = await (await fetch("/api/cases")).json(); } catch { return; }
+  const waiting = C.list.filter((c) => c.status === "awaiting_human").length;
+  $("waitCount").hidden = !waiting; $("waitCount").textContent = waiting;
+  if (!C.list.length) return;
+  $("caseList").innerHTML = C.list.map((c) => `
+    <button class="citem${c.id === C.id ? " on" : ""}" data-case="${esc(c.id)}">
+      <div class="n"><span>${esc(c.case_name || c.id)}</span>${c.waiting ? `<span class="badge unconf">${c.waiting} for you</span>` : ""}</div>
+      <div class="s">${esc(c.id)} · ${esc(STAGE_NAME[c.stage] || human(c.stage))}</div>
+      ${statusPill(c.status)}
+    </button>`).join("");
+  for (const b of $("caseList").querySelectorAll(".citem")) b.onclick = () => selectCase(b.dataset.case);
+}
+
+async function selectCase(id) {
+  if (C.source) { C.source.close(); C.source = null; }
+  C.id = id; C.data = null; C.received = 0;
+  history.replaceState(null, "", `#cases/${encodeURIComponent(id)}`);
+  $("caseLog").innerHTML = "";
+  for (const b of $("caseList").querySelectorAll(".citem")) b.classList.toggle("on", b.dataset.case === id);
+  await refreshCase();
+  C.baseline = C.data ? C.data.event_count : 0;
+  openCaseStream(id);
+}
+
+function openCaseStream(id) {
+  const src = new EventSource(`/api/cases/${encodeURIComponent(id)}/stream?from=${C.received}`);
+  C.source = src;
+  src.onmessage = (msg) => {
+    if (C.id !== id) return;
+    const e = JSON.parse(msg.data);
+    C.received++;
+    const fresh = C.received > C.baseline;
+    addCaseRow(e, fresh);
+    if (fresh) {
+      if (e.data && (e.data.notify || e.data.waiting_for_user)) notifyAction();
+      clearTimeout(C.refreshT);
+      C.refreshT = setTimeout(() => { refreshCase(); loadCaseList(); }, 250);
+    }
+  };
+  src.onerror = () => {  // reconnect from where we were, so the backlog isn't replayed twice
+    src.close();
+    if (C.source === src) setTimeout(() => C.id === id && C.source === src && openCaseStream(id), 2000);
+  };
+}
+
+async function refreshCase() {
+  const id = C.id;
+  for (let i = 0; i < 3; i++) {
+    const res = await fetch(`/api/cases/${encodeURIComponent(id)}`);
+    if (res.status === 503) { await new Promise((r) => setTimeout(r, 200)); continue; }
+    if (!res.ok) return;
+    const data = await res.json();
+    if (C.id !== id) return;
+    C.data = data; renderCase(); return;
+  }
+}
+
+function addCaseRow(e, fresh) {
+  const a = AGENTS[e.agent] || { full: e.agent, color: "#aaa" };
+  const row = document.createElement("div");
+  const d = e.data || {};
+  let cls = e.kind;
+  if (d.input_tokens !== undefined) cls = "usage";
+  row.className = `row ${cls}${fresh ? " fresh" : ""}`;
+  row.style.setProperty("--c", a.color);
+  const t = new Date(e.ts);
+  row.innerHTML = `<span class="t">${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}</span>
+    <span class="a">${esc(a.full)}</span><span class="k">${ICON[e.kind] || "·"}</span><span class="m">${esc(e.message)}</span>`;
+  const log = $("caseLog");
+  const stick = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+  log.appendChild(row);
+  if (stick || fresh) log.scrollTop = log.scrollHeight;
+}
+
+function taskAction(t, c) {
+  if (t.kind === "approve_send") {
+    const o = (c.outbox || []).find((x) => x.id === t.outbox_id);
+    return `<button class="primary" data-review="${esc(t.outbox_id || "")}">Review the draft${o ? ` to ${esc(o.to)}` : ""} →</button>`;
+  }
+  if (t.kind === "upload_evidence") {
+    return `<button class="go" data-upload="${esc(t.id)}">Upload document</button>
+      <input type="file" hidden accept=".pdf,.txt,.md" data-file="${esc(t.id)}">
+      <span class="note">PDF or text · max 10 MB · stays on this computer until you approve a reply</span>`;
+  }
+  if (t.kind === "confirm_outcome") return `<button class="go" data-confirm="${esc(t.id)}">Confirm outcome</button>
+      <span class="note">The case closes only after you confirm</span>`;
+  if (t.kind === "confirm_sender") return `<span class="note">Check the sender before ClaimBack acts on this message</span>`;
+  return "";
+}
+
+function renderCase() {
+  const c = C.data;
+  if (!c) return;
+  const corrById = Object.fromEntries((c.correspondence || []).map((m) => [m.id, m]));
+  const uploadsById = Object.fromEntries((c.uploads || []).map((u) => [u.id, u]));
+  const cite = (id) => id ? `<cite>Insurer's exact words · ${esc(id)}${corrById[id] ? " · " + esc(corrById[id].subject || "") : ""}</cite>` : "";
+
+  $("caseHead").innerHTML = `
+    <div>
+      <div class="title">${esc(c.insurer_name || "")} · claim ${esc(c.claim_number || "")}</div>
+      <div class="meta">Case <code>${esc(c.case_id)}</code> · from run <code>${esc(c.run_id)}</code> · insurer replies to <code>${esc(c.reply_address)}</code></div>
+    </div>
+    <div class="right">
+      <span class="stage">Stage: <b>${esc(STAGE_NAME[c.stage] || human(c.stage))}</b></span>
+      ${statusPill(c.status, true)}
+    </div>`;
+
+  // waiting for you
+  const mine = (c.tasks || []).filter((t) => t.status === "open" && t.owner === "user");
+  if (mine.length) {
+    $("waitBox").innerHTML = `<div class="wait" id="waitBanner">
+      <h2><span class="bell"></span>Waiting for you <small>${mine.length} open task${mine.length > 1 ? "s" : ""}</small></h2>
+      <div class="wtasks">${mine.map((t) => {
+        const left = t.due_date ? daysLeft(t.due_date) : "";
+        return `<div class="wtask">
+          <div class="tt">${esc(t.title)}</div>
+          ${t.due_date ? `<div class="due${/overdue/.test(left) ? " late" : ""}">Due ${esc(t.due_date)} · ${esc(left)}</div>` : ""}
+          ${t.quote ? `<blockquote class="q">“${esc(t.quote)}”${cite(t.correspondence)}</blockquote>` : ""}
+          <div class="actions">${taskAction(t, c)}</div></div>`;
+      }).join("")}</div></div>`;
+    if (Date.now() < C.flashUntil) $("waitBanner").classList.add("flash");
+  } else {
+    const o = c.outcome;
+    $("waitBox").innerHTML = c.status === "closed"
+      ? `<div class="card allclear" style="flex-direction:column;align-items:flex-start">
+          <div><span class="ok">✓</span> Case closed${o ? ` · outcome: <b style="color:var(--ok)">denial ${esc(human(o.result).toLowerCase())}</b>${o.confirmed_by === "user" ? " (confirmed by you)" : ""}` : ""}</div>
+          ${o && o.quote ? `<blockquote class="q">“${esc(o.quote)}”${cite(o.source)}</blockquote>` : ""}</div>`
+      : `<div class="card allclear"><span class="ok">✓</span>Nothing needs you right now. ${c.status === "awaiting_insurer"
+          ? "ClaimBack is watching the inbox for the insurer's reply."
+          : (c.pending_followups || []).length ? "The Writer and Fact Checker are drafting your reply; it will appear in the outbox for approval."
+          : "The agents are working."}</div>`;
+  }
+
+  // correspondence
+  const corr = c.correspondence || [];
+  $("corr").innerHTML = corr.length ? corr.map((m) => {
+    const out = m.direction === "out";
+    const a = m.analysis;
+    const untrusted = !out && m.trusted_sender === false;
+    const badges = [
+      m.simulated ? `<span class="badge sim">simulated insurer</span>` : "",
+      untrusted ? `<span class="badge untrusted">untrusted sender</span>` : "",
+      a ? `<span class="badge type">${esc(human(a.message_type))}</span>` : "",
+      a && a.decision ? `<span class="badge ${a.decision.outcome === "upheld" ? "untrusted" : "conf"}">denial ${esc(human(a.decision.outcome).toLowerCase())}</span>` : "",
+      a && a.injection_suspected ? `<span class="badge inj">possible prompt injection</span>` : "",
+      !a && !out && m.status !== "analyzed" ? `<span class="badge muted">${esc(m.status === "received" ? "reading…" : human(m.status))}</span>` : "",
+      out && m.status ? `<span class="badge ${m.status === "sent" ? "conf" : "muted"}">${esc(human(m.status))}</span>` : "",
+    ].join("");
+    return `<div class="msg ${out ? "out" : "in"}${untrusted ? " untrusted" : ""}">
+      <div class="mh"><span class="dir">${out ? "↑ Sent to" : "↓ Received from"}</span>
+        <span class="mono">${esc(out ? (m.to || "") : (m.from || ""))}</span>${badges}
+        <span class="when">${esc(m.id)} · ${fmtWhen(m.date || m.sent || m.created)}</span></div>
+      <div class="subj">${esc(m.subject || "(no subject)")}</div>
+      ${a ? `<div class="sum"><span class="by">Correspondence agent</span>${esc(a.summary)}</div>` : ""}
+      ${a && a.decision && a.decision.quote ? `<blockquote class="q" style="margin-top:8px">“${esc(a.decision.quote)}”</blockquote>` : ""}
+      ${out && m.message_id ? `<div class="mh" style="margin-top:4px"><span class="mono">Message-ID ${esc(m.message_id)}</span></div>` : ""}
+    </div>`;
+  }).join("") : `<div class="empty">No messages yet. The first letter goes out when you approve it.</div>`;
+
+  // outbox
+  const allow = new Set((c.insurer_addresses || []).map((x) => x.toLowerCase()));
+  const ob = c.outbox || [];
+  $("outbox").innerHTML = ob.length ? ob.slice().reverse().map((o) => {
+    const pending = o.status === "awaiting_approval";
+    const [stText, stCls] = OUTBOX_STATUS[o.status] || [human(o.status), "action_required"];
+    const ok = allow.has(String(o.to || "").toLowerCase());
+    const body = o.body == null ? `<div class="empty" style="padding:10px 14px">Draft body not available</div>` : `<pre class="body">${esc(o.body)}</pre>`;
+    return `<div class="ob${pending ? " pending" : ""}" id="ob-${esc(o.id)}">
+      <div class="oh"><span class="k">${esc(human(o.kind))}</span><span class="badge muted">${esc(o.id)}</span>
+        <span class="pill st-${stCls}">${esc(stText)}</span></div>
+      <div class="fields">
+        <span class="l">To</span><span><span class="to">${esc(o.to || "")}</span>
+          ${ok ? `<span class="allow">✓ on this case's insurer allow-list</span>` : `<span class="deny">✗ not on the insurer allow-list</span>`}</span>
+        <span class="l">Subject</span><span>${esc(o.subject || "")}</span>
+        ${o.in_reply_to ? `<span class="l">Thread</span><span class="mono" style="font-size:12px">in reply to ${esc(o.in_reply_to)}</span>` : ""}
+        ${(o.attachments || []).length ? `<span class="l">Attach</span><span>${o.attachments.map((uid) =>
+          `<span class="badge muted">📎 ${esc((uploadsById[uid] || {}).name || uid)}</span>`).join(" ")}</span>` : ""}
+      </div>
+      ${pending ? body + `<div class="ofoot"><span class="note">Nothing leaves this computer until you click.</span>
+          <button class="send" data-approve="${esc(o.id)}" ${ok ? "" : "disabled"}>Approve &amp; send</button></div>`
+        : `<details><summary>Show the letter</summary>${body}</details>`}
+    </div>`;
+  }).join("") : `<div class="empty">No drafts</div>`;
+
+  // deadlines
+  const dls = c.deadlines || [];
+  $("deadlines").innerHTML = dls.length ? dls.map((d) => `<div class="d">
+      <div class="top"><span class="date">${esc(d.date)}</span><span class="left">${esc(daysLeft(d.date))}</span></div>
+      <div class="lbl">${esc(d.label)}</div>
+      ${d.quote ? `<blockquote class="q">“${esc(d.quote)}”</blockquote>` : ""}
+      <div class="src">Source: ${esc(d.source || "")}${corrById[d.source] ? " · " + esc(corrById[d.source].subject || "") : ""}
+        ${d.confirmed ? `<span class="badge conf">confirmed</span>` : `<span class="badge unconf">unconfirmed</span>`}</div>
+    </div>`).join("") : `<div class="empty">No deadlines yet</div>`;
+
+  // all tasks
+  const tasks = c.tasks || [];
+  $("taskList").innerHTML = tasks.length ? tasks.map((t) => {
+    const ups = (c.uploads || []).filter((u) => u.task === t.id);
+    return `<div class="t ${esc(t.status)}">
+      <span class="id">${esc(t.id)}</span><span class="ti">${esc(t.title)}${ups.map((u) =>
+        `<br><span class="uploaded" style="color:var(--ok);font-family:var(--mono);font-size:12px">📎 ${esc(u.id)} ${esc(u.name)} · ${Math.max(1, Math.round(u.bytes / 1024))} KB</span>`).join("")}</span>
+      <span class="who">${esc(t.owner)} · ${esc(t.status)}</span></div>`;
+  }).join("") : `<div class="empty">No tasks</div>`;
+
+  wireCaseButtons();
+}
+
+function wireCaseButtons() {
+  for (const b of document.querySelectorAll("[data-review]")) b.onclick = () => {
+    const el = $("ob-" + b.dataset.review);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.classList.remove("hl"); void el.offsetWidth; el.classList.add("hl");
+  };
+  for (const b of document.querySelectorAll("[data-approve]")) b.onclick = () => approve(b.dataset.approve);
+  for (const b of document.querySelectorAll("[data-confirm]")) b.onclick = () => confirmOutcome(b.dataset.confirm, b);
+  for (const b of document.querySelectorAll("[data-upload]")) {
+    const input = document.querySelector(`[data-file="${CSS.escape(b.dataset.upload)}"]`);
+    b.onclick = () => input.click();
+    input.onchange = () => input.files[0] && uploadFile(b.dataset.upload, input.files[0], b);
+  }
+}
+
+async function postCase(action, payload) {
+  const res = await fetch(`/api/cases/${encodeURIComponent(C.id)}/${action}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  let body = {};
+  try { body = await res.json(); } catch {}
+  if (!res.ok) throw new Error(res.status === 501 ? "This step isn't built yet on the server" : body.error || `HTTP ${res.status}`);
+  return body;
+}
+
+function approve(outboxId) {
+  const o = (C.data.outbox || []).find((x) => x.id === outboxId);
+  if (!o) return;
+  $("dlgTo").textContent = o.to; $("dlgTo2").textContent = o.to; $("dlgSubj").textContent = o.subject || "";
+  const dlg = $("sendDlg");
+  dlg.returnValue = "";
+  dlg.onclose = async () => {
+    if (dlg.returnValue !== "send") return;
+    const btn = document.querySelector(`[data-approve="${CSS.escape(outboxId)}"]`);
+    if (btn) { btn.disabled = true; btn.textContent = "Sending…"; }
+    try {
+      await postCase("approve", { outbox_id: outboxId });
+      toast(`Sent to ${o.to}`, "ok");
+    } catch (err) { toast("Not sent: " + err.message, "err"); }
+    refreshCase(); loadCaseList();
+  };
+  dlg.showModal();
+  $("dlgSend").focus();
+}
+
+async function confirmOutcome(taskId, btn) {
+  btn.disabled = true;
+  try { await postCase("confirm-outcome", { task_id: taskId }); toast("Outcome confirmed", "ok"); }
+  catch (err) { toast("Could not confirm: " + err.message, "err"); btn.disabled = false; }
+  refreshCase(); loadCaseList();
+}
+
+async function uploadFile(taskId, file, btn) {
+  if (file.size > 10 * 1024 * 1024) return toast("That file is over 10 MB", "err");
+  if (btn) { btn.disabled = true; btn.textContent = "Uploading…"; }
+  const data_b64 = await new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",", 2)[1] || "");
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+  try { await postCase("upload", { task_id: taskId, filename: file.name, data_b64 }); toast(`Uploaded ${file.name}`, "ok"); }
+  catch (err) { toast("Upload failed: " + err.message, "err"); }
+  refreshCase(); loadCaseList();
+}
+
+// Notifications stay generic: no names, claim numbers or insurer, since they show on the lock screen
+function updateAlertUi() {
+  const p = "Notification" in window ? Notification.permission : "unsupported";
+  $("alertBtn").hidden = p !== "default";
+  $("alertState").textContent = p === "granted" ? "🔔 Alerts on" : p === "denied" ? "Alerts blocked in this browser" : p === "unsupported" ? "" : "";
+}
+$("alertBtn").onclick = async () => {
+  if ("Notification" in window) await Notification.requestPermission();
+  updateAlertUi();
+};
+function notifyAction() {
+  C.flashUntil = Date.now() + 2500;  // the banner is re-rendered by the refresh that follows; it flashes then
+  if (Date.now() - C.lastNotify < 5000) return;  // one alert per burst of task events
+  C.lastNotify = Date.now();
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("ClaimBack", { body: "Action needed on your ClaimBack case", tag: "claimback-action" });
+  }
+}
+
+// ---------- view switching ----------
+let casesStarted = false;
+function showView(name) {
+  const cases = name === "cases";
+  $("runView").hidden = cases; $("casesView").hidden = !cases;
+  $("runControls").hidden = cases; $("caseControls").hidden = !cases;
+  $("tabRun").classList.toggle("on", !cases); $("tabCases").classList.toggle("on", cases);
+  if (cases && !casesStarted) {
+    casesStarted = true;
+    updateAlertUi();
+    setInterval(loadCaseList, 8000);
+    const want = decodeURIComponent(location.hash.split("/")[1] || "");
+    loadCaseList().then(() => {
+      const pick = C.list.find((c) => c.id === want) || C.list[0];
+      if (pick) selectCase(pick.id);
+    });
+  } else if (cases && C.id) {
+    history.replaceState(null, "", `#cases/${encodeURIComponent(C.id)}`);
+  }
+  if (!cases) history.replaceState(null, "", "#run");
+}
+$("tabRun").onclick = () => showView("run");
+$("tabCases").onclick = () => showView("cases");
+
 (async () => {
   resetState();
+  if (!STATIC) loadCaseList();  // tab badge
+  if (!STATIC && location.hash.startsWith("#cases")) showView("cases");
   if (STATIC) {
     for (const el of document.querySelectorAll(".live-only")) el.hidden = true;
     $("staticNote").hidden = false;
@@ -508,7 +1041,7 @@ $("startBtn").onclick = async () => {
     if (runs.length) replay(runs[0].id);  // visitors land on the recording already playing
     return;
   }
-  const cases = await (await fetch("/api/cases")).json();
+  const cases = await (await fetch("/api/case-dirs")).json();
   $("caseSel").innerHTML = cases.map((c) => `<option>${esc(c)}</option>`).join("");
   const runs = await loadRuns();
   if (runs.length) runs[0].status === "running" ? watchLive(runs[0].id) : showFinal(runs[0].id);
