@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClaimBack pitch deck</title>
+<style>
+  :root { --bg: #e9e6de; --ink: #16201e; --muted: #5b6460; --line: #cfcabd; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #151a19; --ink: #e6e9e7; --muted: #a3aca8; --line: #2c3533; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  header { max-width: 1200px; margin: 0 auto; padding: 24px 16px 8px; }
+  header h1 { font-size: 22px; margin: 0 0 4px; }
+  header p { margin: 0; color: var(--muted); }
+  header label { display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; color: var(--muted); }
+  main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 64px; display: flex; flex-direction: column; gap: 28px; }
+  .frame { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px;
+           box-shadow: 0 2px 12px rgba(0, 0, 0, .18); }
+  .notes { margin: 8px 2px 0; color: var(--muted); font-size: 14px; white-space: pre-wrap; }
+  .notes b { color: var(--ink); }
+  body.no-notes .notes { display: none; }
+  .err { padding: 16px; border: 1px solid var(--line); border-radius: 8px; }
+
+  /* The slide canvas: 1920x1080, every style inline, scaled to the frame */
+  .frame > section { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; }
+  section, section * { margin: 0; }
+  section ol, section ul { padding-left: 36px; }
+  section h1, section h2, section h3 { font-weight: 600; }
+  section table { border-collapse: collapse; width: 100%; }
+  section th, section td { border: 1px solid #cfcabd; padding: .35em .6em; text-align: left; vertical-align: top; }
+  section aside { display: none; }
+  x-shape { display: block; flex: none; }
+  x-shape[kind="arrow-right"] { clip-path: polygon(0 30%, 60% 30%, 60% 0, 100% 50%, 60% 100%, 60% 70%, 0 70%); }
+  x-shape[kind="ellipse"] { border-radius: 50%; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ClaimBack pitch deck</h1>
+  <p>Viewer for the slide files in <code>slides/</code>, in the order set by <code>deck.json</code>. Edit a slide file and reload. See <code>README.md</code>.</p>
+  <label><input type="checkbox" id="notesChk" checked> Show speaker notes</label>
+</header>
+<main id="deck"></main>
+<script>
+const deckEl = document.getElementById("deck");
+
+function fit() {
+  for (const f of document.querySelectorAll(".frame")) {
+    const s = f.querySelector("section");
+    if (s) s.style.transform = `scale(${f.clientWidth / 1920})`;
+  }
+}
+
+async function load() {
+  let deck;
+  try {
+    deck = await (await fetch("deck.json")).json();
+  } catch {
+    deckEl.innerHTML = `<p class="err">Couldn't load deck.json. Serve this folder instead of opening the file directly:
+      <code>python -m http.server 8000 -d design/deck</code>, then open http://localhost:8000</p>`;
+    return;
+  }
+  document.title = deck.title;
+  for (const face of Object.values(deck.faces || {})) {
+    if (face.href) {
+      const l = document.createElement("link");
+      l.rel = "stylesheet"; l.href = face.href;
+      document.head.appendChild(l);
+    }
+  }
+  for (const [i, id] of deck.order.entries()) {
+    const wrap = document.createElement("div");
+    const frame = document.createElement("div");
+    frame.className = "frame";
+    wrap.appendChild(frame);
+    deckEl.appendChild(wrap);
+    try {
+      const res = await fetch(`slides/${id}.html`);
+      if (!res.ok) throw new Error(res.status);
+      frame.innerHTML = await res.text();
+      const aside = frame.querySelector("section > aside");
+      const notes = document.createElement("p");
+      notes.className = "notes";
+      notes.innerHTML = `<b>${i + 1} · ${id}</b>${aside ? " · " : ""}`;
+      if (aside) notes.append(aside.textContent.trim());
+      wrap.appendChild(notes);
+    } catch (e) {
+      frame.innerHTML = `<p class="err">slides/${id}.html couldn't be loaded (${e.message})</p>`;
+    }
+  }
+  fit();
+}
+
+document.getElementById("notesChk").onchange = (e) => document.body.classList.toggle("no-notes", !e.target.checked);
+addEventListener("resize", fit);
+load();
+</script>
+</body>
+</html>

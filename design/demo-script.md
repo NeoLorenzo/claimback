@@ -118,7 +118,7 @@ python -m claimback confirm <case_id> <task_id>
 
 ## Deck ↔ jury criteria
 
-The deck: https://claude.ai/artifact/BnDNbC45KgskAbtqW8mXjF
+The deck: https://claude.ai/artifact/BnDNbC45KgskAbtqW8mXjF. The editable source is in [deck/](deck/README.md).
 
 | # | Slide | Criteria |
 |---|---|---|

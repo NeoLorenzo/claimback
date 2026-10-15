@@ -1,0 +1,48 @@
+<section id="agents" data-transition="fade" style="background:#F5F3EC;color:#16201E;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:36px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#1F6F5C">Agent architecture</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.15">Seven agents, typed handoffs, a loop that argues back</h2>
+<div style="display:flex;gap:16px;align-items:center">
+<div style="width:230px;display:flex;flex-direction:column;gap:6px;background:#FDFCF8;border:1px solid #DAD5C7;border-radius:12px;padding:20px">
+<p style="font-size:26px;font-weight:600">Intake</p>
+<p style="font-size:24px;color:#4A5652">extracts facts, redacts identifiers</p>
+</div>
+<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
+<div style="width:230px;display:flex;flex-direction:column;gap:6px;background:#FDFCF8;border:1px solid #DAD5C7;border-radius:12px;padding:20px">
+<p style="font-size:26px;font-weight:600">Planner</p>
+<p style="font-size:24px;color:#4A5652">strategy, questions, merit</p>
+</div>
+<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
+<div style="width:290px;display:flex;flex-direction:column;gap:10px;border:2px dashed #1F6F5C;border-radius:12px;padding:14px">
+<p style="font-size:24px;font-weight:600;color:#1F6F5C">in parallel</p>
+<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">Policy Analyst</p></div>
+<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">Evidence Researcher</p></div>
+</div>
+<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
+<div style="width:420px;display:flex;flex-direction:column;gap:10px;border:2px dashed #B4621A;border-radius:12px;padding:14px">
+<p style="font-size:24px;font-weight:600;color:#9A520F">revision loop, up to 3 rounds</p>
+<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">Writer ⇄ Adversarial Reviewer</p></div>
+<div style="background:#FDFCF8;border:1px solid #DAD5C7;border-radius:10px;padding:12px 16px"><p style="font-size:24px;font-weight:600">∥ Fact Checker</p></div>
+</div>
+<x-shape kind="arrow-right" style="background:#1F6F5C;width:40px;height:24px"></x-shape>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;background:#0E2421;border-radius:12px;padding:20px">
+<p style="font-size:26px;font-weight:600;color:#F5F3EC">Packager</p>
+<p style="font-size:24px;color:#BFD3CD">local, no model</p>
+</div>
+</div>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;border-top:3px solid #1F6F5C;padding:20px 0 0 0">
+<h3 style="font-size:32px;font-weight:600">Planning</h3>
+<p style="font-size:24px;line-height:1.45;color:#4A5652">The Planner picks the strategy and the appeal type, sends each analyst its own questions, and rates merit. Revising stops early when the reviewer scores 3/10 or lower.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;border-top:3px solid #1F6F5C;padding:20px 0 0 0">
+<h3 style="font-size:32px;font-weight:600">Handoffs</h3>
+<p style="font-size:24px;line-height:1.45;color:#4A5652">Each agent writes a schema-checked artifact to a shared run state. The next agent reads only what it needs. Invalid output goes back to the agent with the error.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;border-top:3px solid #1F6F5C;padding:20px 0 0 0">
+<h3 style="font-size:32px;font-weight:600">Error recovery</h3>
+<p style="font-size:24px;line-height:1.45;color:#4A5652">Retries with backoff, tested with injected faults (API timeout, search outage, malformed handoff). Every stage is checkpointed, so a crashed run resumes where it stopped.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6A746F">claimback/orchestrator.py · state.py · schemas.py · Jury ② agent design</p>
+<aside>Jury criterion 2: planning, handoffs and error recovery. The orchestrator runs a fixed, auditable route, which is deliberate for safety. The Planner decides strategy and appeal type, asks the Policy Analyst and the Evidence Researcher separate questions, and both run in parallel. The Writer drafts, then the Adversarial Reviewer plays the insurer while the Fact Checker traces every claim to a source, also in parallel. Revisions are capped at three rounds, and a reviewer score of 3/10 or lower stops revising, because polishing won’t fix a weak case. Recovery is tested, not claimed: chaos mode fails the first attempt of three stages, and in the recorded run we also killed the process mid-draft and resumed from the checkpoint.</aside>
+</section>
