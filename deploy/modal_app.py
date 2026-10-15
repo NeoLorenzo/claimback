@@ -111,7 +111,9 @@ def case_ops(kind: str, owner: str | None, args: dict, job_id: int | None):
             if not path.startswith(f"{owner}/"):
                 raise ops.Refused("upload belongs to someone else")
             data = Supabase().download("uploads", path)
-            result = ops.upload(owner, args["case_id"], args["task_id"], path.rsplit("/", 1)[-1], data)
+            import re
+            name = re.sub(r"^\d{10,}-", "", path.rsplit("/", 1)[-1])  # drop the storage timestamp prefix
+            result = ops.upload(owner, args["case_id"], args["task_id"], name, data)
             volume.commit()
             _job(job_id, status="running", result={"note": "drafting the reply"})
             ops.advance([args["case_id"]])

@@ -70,9 +70,14 @@ def respond(agent: str, schema, user: str = ""):
         return _correspondence(user)
     if schema is AppealDraft and '<document id="REQUEST">' in user:
         return AppealDraft(subject_line="Requested information", enclosures=["Letter of medical necessity"],
-                           letter_markdown="Dear Appeals and Grievances,\n\nAs requested, I enclose the letter of "
-                           "medical necessity and my glucose meter log for my appeal.\n\n"
-                           "Sincerely,\n[PATIENT_NAME_1]\n" + "\n" * 2 + "(mock follow-up)" + " " * 400,
+                           letter_markdown="Dear Appeals and Grievances Reviewer,\n\n"
+                           "Thank you for your letter about my appeal. As you requested, I have enclosed the letter "
+                           "of medical necessity from my treating endocrinologist.\n\n"
+                           "The letter confirms that I take insulin every night and that I have had two episodes of "
+                           "low blood sugar below 54 mg/dL, one of them after my insulin dose was lowered.\n\n"
+                           "You now have the information you asked for. Please complete your review of my appeal and "
+                           "send me your written decision. Please contact me if you need anything else.\n\n"
+                           "Sincerely,\n[PATIENT_NAME_1]\n",
                            claims=[{"claim_id": "C1", "text": "Insurer requested an LMN", "source_ids": ["REQUEST"]},
                                    {"claim_id": "C2", "text": "Two level 2 events", "source_ids": ["UPLOAD-1"]}])
     if schema is PHIScan:

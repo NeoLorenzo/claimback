@@ -120,7 +120,6 @@ def _html(text: str, facts: dict) -> str:
 <title>Appeal packet</title>
 <style>
 :root {{ --ink:#1d2433; --muted:#5b6475; --line:#d9dee7; --accent:#1f6f5c; --warn:#a35a00; --bg:#ffffff; --panel:#f5f7fa; }}
-@media (prefers-color-scheme: dark) {{ :root {{ --ink:#e6e9ef; --muted:#a3abba; --line:#343b48; --accent:#5cc5a7; --warn:#f0a23b; --bg:#14171c; --panel:#1c2027; }} }}
 body {{ background:var(--bg); color:var(--ink); font:16px/1.6 Georgia, 'Times New Roman', serif; max-width:820px; margin:0 auto; padding:32px 16px 80px; }}
 h1,h2,h3 {{ font-family: system-ui, sans-serif; line-height:1.25; }}
 h1 {{ color:var(--accent); }}

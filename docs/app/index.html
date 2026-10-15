@@ -20,7 +20,9 @@
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.6 var(--font); }
+body { margin: 0; background: var(--bg); color: var(--text); font: 18px/1.6 var(--font);
+  min-height: 100vh; display: flex; flex-direction: column; }
+body > main { flex: 1; width: 100%; }
 a { color: var(--brand); text-underline-offset: 3px; }
 h1, h2, h3 { line-height: 1.25; margin: 0; }
 h1 { font-size: clamp(28px, 4.4vw, 38px); letter-spacing: -.01em; }
@@ -187,6 +189,7 @@ dialog::backdrop { background: rgba(20, 26, 36, .55); }
 .blanks ul { margin: 8px 0 0; padding-left: 22px; }
 .letter-text { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 28px 32px; font: 18px/1.65 Georgia, "Times New Roman", serif;
   overflow-x: auto; overflow-wrap: anywhere; }
+.letter-text p { margin: 0 0 14px; }
 .letter-text mark.blank { background: #ffe1a6; color: #5c3200; padding: 1px 4px; border-radius: 4px; font-family: var(--font); font-weight: 700; }
 dialog { overflow-x: hidden; }
 .letter-text table { border-collapse: collapse; font: 16px/1.45 var(--font); margin: 10px 0; max-width: 100%; }
@@ -513,13 +516,18 @@ function onEvent(e) {
   eventsByRun[e.run_id].push(e);
   if (view.name === "appeal" && view.id === e.run_id) refresh();
 }
-const JOB_DONE = {approve: "Your letter was sent to your insurer.", upload: "Thank you. We received your file and we're preparing your reply.",
-  edit: "Your changes are saved.", confirm: "Your appeal is closed. Thank you for using ClaimBack.", simulate: "Practice message sent. Give it a few seconds to arrive."};
+const JOB_DONE = {approve: "Your letter was sent to your insurer.", upload: "Thank you. Your reply is ready for you to read.",
+  edit: "Your changes are saved.", confirm: "Your appeal is closed. Thank you for using ClaimBack.", simulate: "Your insurer's practice reply has arrived."};
 function onJob(j) {
   if (j.status === "failed") toast(friendlyError(j.error), true);
   if (j.status === "done" && JOB_DONE[j.kind]) toast(JOB_DONE[j.kind]);
   if (j.status === "done" && j.kind === "start_run" && j.result?.case_id) toast("Your appeal is ready to look at.");
   if (pendingJobs[j.id] && (j.status === "done" || j.status === "failed")) { pendingJobs[j.id](j); delete pendingJobs[j.id]; }
+  if (j.status === "done" && j.payload?.case_id) setTimeout(() => reloadCase(j.payload.case_id), 1500);
+}
+async function reloadCase(id) {
+  const {data} = await sb.from("cases").select("*").eq("id", id).maybeSingle();
+  if (data) { upsert(cases, data); refresh(); }
 }
 function friendlyError(msg) {
   msg = String(msg || "");
@@ -548,8 +556,9 @@ function stateOf(run) {
 }
 function taskSentence(t, d) {
   if (t.kind === "approve_send") return "Read your letter and send it when you're happy with it.";
-  if (t.kind === "upload_evidence") return `Send us ${lowerFirst(itemName(t.title))}${t.due_date ? ` by ${shortDate(t.due_date + "T12:00")}` : ""}.`;
-  if (t.kind === "confirm_outcome") return "Your insurer sent a decision. Please confirm it.";
+  if (t.kind === "upload_evidence") return `Your insurer asked for: ${lowerFirst(itemName(t.title))}. Please send it${t.due_date ? ` by ${shortDate(t.due_date + "T12:00")}` : ""}.`;
+  if (t.kind === "confirm_outcome") return /overturn|approv/i.test(t.quote || t.title)
+    ? "Good news: your insurer says they approved your claim. Please confirm it." : "Your insurer sent a decision. Please confirm it.";
   if (t.kind === "consider_external_review") return "Decide whether to ask for an independent review.";
   if (t.kind === "confirm_sender") return "We got a message from an address we don't recognize. Please take a look.";
   return "Please read the latest message from your insurer.";
@@ -702,7 +711,7 @@ function renderAppeal() {
       ${d.outcome.quote ? `<p class="quote" style="margin-top:10px">Your insurer wrote: <b>“${esc(d.outcome.quote)}”</b></p>` : ""}
       <p class="muted small" style="margin-top:10px">You confirmed this on ${esc(longDate(d.outcome.confirmed))}.</p></div>` : ""}
 
-    ${v ? `<h2 class="section-title">Our honest assessment</h2><div class="card verdict ${esc(run.verdict)}">
+    ${v && c.status !== "closed" ? `<h2 class="section-title">Our honest assessment</h2><div class="card verdict ${esc(run.verdict)}">
       <span class="badge" aria-hidden="true">${v.icon}</span><h3>${esc(v.title)}</h3><p class="muted">${esc(v.text)}</p></div>` : ""}
 
     <h2 class="section-title">Your letters</h2>
@@ -737,7 +746,10 @@ function renderAppeal() {
 
   if ($("packetBtn")) $("packetBtn").onclick = () => openPacket(run.packet_path);
   el.querySelectorAll("[data-letter]").forEach((b) => b.onclick = () => openLetter(b.dataset.letter));
-  el.querySelectorAll("[data-scene]").forEach((b) => b.onclick = () => caseAction(b, "simulate", {scene: b.dataset.scene}));
+  el.querySelectorAll("[data-scene]").forEach((b) => b.onclick = () => {
+    toast("Sending a practice message from your insurer. It takes about 15 seconds to arrive.");
+    caseAction(b, "simulate", {scene: b.dataset.scene});
+  });
   el.querySelectorAll("[data-confirm]").forEach((b) => b.onclick = async () => {
     if (!(await confirmAsk("Close this appeal?", "We'll record your insurer's decision and mark the appeal as finished.", "Yes, close it"))) return;
     caseAction(b, "confirm", {task_id: b.dataset.confirm});
@@ -749,12 +761,12 @@ function todoCard(t, d) {
   if (t.kind === "approve_send") return `<div class="todo-card"><h3>Read your letter and send it</h3>
     <p class="muted">Take your time. Nothing is sent until you say so.</p>
     <div class="actions"><button class="btn primary" data-letter="${esc(t.outbox_id)}">Read your letter</button></div></div>`;
-  if (t.kind === "upload_evidence") return `<div class="todo-card"><h3>Send us ${esc(lowerFirst(itemName(t.title)))}</h3>
+  if (t.kind === "upload_evidence") return `<div class="todo-card"><h3>Your insurer asked for: ${esc(lowerFirst(itemName(t.title)))}</h3>
     ${t.due_date ? `<p class="due">Due ${esc(dueText(t.due_date))}</p>` : ""}
     ${t.quote ? `<p class="quote">Your insurer wrote: <b>“${esc(t.quote)}”</b></p>` : ""}
     <p class="muted small">${t.supplier === "provider" ? "Ask your doctor's office for this. " : ""}A PDF or text file works.</p>
     <div class="actions"><label class="btn primary">Choose a file<input type="file" accept=".pdf,.txt,.md" data-upload="${esc(t.id)}" hidden></label></div></div>`;
-  if (t.kind === "confirm_outcome") return `<div class="todo-card"><h3>Your insurer made a decision</h3>
+  if (t.kind === "confirm_outcome") return `<div class="todo-card"><h3>${/overturn|approv/i.test(t.quote || t.title) ? "Good news: your insurer approved your claim" : "Your insurer made a decision"}</h3>
     ${t.quote ? `<p class="quote">They wrote: <b>“${esc(t.quote)}”</b></p>` : ""}
     <p class="muted">If that matches the letter you received, confirm it and we'll close your appeal.</p>
     <div class="actions"><button class="btn good" data-confirm="${esc(t.id)}">Yes, that's right</button></div></div>`;
@@ -780,7 +792,7 @@ async function uploadFile(input) {
 async function openPacket(path) {
   const {data, error} = await sb.storage.from("packets").download(path);
   if (error) return toast("We couldn't open the packet. Please try again.", true);
-  const html = await data.text();
+  const html = (await data.text()).replaceAll("prefers-color-scheme: dark", "prefers-color-scheme: off");
   $("packetFrame").srcdoc = html;
   $("packetDownload").onclick = () => {
     const a = document.createElement("a");
@@ -800,7 +812,7 @@ function openLetter(outboxId, keepMode = false) {
   view.letter = outboxId; view.letterMode = mode;
   const blanks = blanksIn(o.body);
   const notes = o.reviewer_notes || [];
-  const uploads = Object.fromEntries((c.data.uploads || []).map((u) => [u.id, u.name]));
+  const uploads = Object.fromEntries((c.data.uploads || []).map((u) => [u.id, String(u.name).replace(/^\d{10,}-/, "")]));
   $("letterTitle").textContent = o.kind === "initial_appeal" ? "Your appeal letter" : "Your reply with the documents";
   const body = $("letterBody"), foot = $("letterFoot");
   if (mode === "fill") {
