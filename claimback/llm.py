@@ -16,7 +16,7 @@ def _load_dotenv() -> None:
         return
     for line in open(path, encoding="utf-8"):
         key, sep, value = line.strip().partition("=")
-        if sep and key and not key.startswith("#"):
+        if sep and key and value.strip() and not key.startswith("#"):
             os.environ.setdefault(key.strip(), value.strip().strip('"'))
 
 
