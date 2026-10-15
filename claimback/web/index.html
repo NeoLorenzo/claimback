@@ -99,6 +99,8 @@ aside { display: flex; flex-direction: column; gap: 16px; }
 .stat .v { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .stat .l { color: var(--muted); font-size: 12px; }
 .stat.wide { grid-column: span 2; }
+.verdict .v { text-transform: capitalize; }
+.verdict.strong .v { color: var(--ok); } .verdict.possible .v { color: var(--warn); } .verdict.weak .v { color: var(--err); }
 .score-bar { height: 6px; background: var(--panel-2); border-radius: 3px; margin-top: 6px; overflow: hidden; }
 .score-bar div { height: 100%; width: 0; background: var(--warn); transition: width .6s, background .6s; }
 .panel { padding: 14px 16px; }
@@ -146,6 +148,7 @@ aside { display: flex; flex-direction: column; gap: 16px; }
 
   <aside>
     <div class="stats">
+      <div class="stat wide verdict" id="verdictTile"><div class="v" id="sVerdict">–</div><div class="l" id="sVerdictWhy">appeal merit (planner · policy analyst · reviewer)</div></div>
       <div class="stat"><div class="v" id="sElapsed">0:00</div><div class="l">run time</div></div>
       <div class="stat"><div class="v" id="sCalls">0</div><div class="l">model calls</div></div>
       <div class="stat"><div class="v" id="sTokens">0</div><div class="l">tokens in / out</div></div>
@@ -268,6 +271,8 @@ function resetState() {
   for (const id of ["sCalls", "sRecovered"]) $(id).textContent = "0";
   $("sTokens").textContent = "0"; $("sCost").textContent = "$0.00"; $("sElapsed").textContent = "0:00";
   $("sClaims").textContent = "–"; $("sScore").textContent = "–"; $("scoreBar").style.width = "0";
+  $("sVerdict").textContent = "–"; $("verdictTile").className = "stat wide verdict";
+  $("sVerdictWhy").textContent = "appeal merit (planner · policy analyst · reviewer)";
   setPacket(false); setNow("Ready", false);
 }
 function setNode(agent, cls, sub) {
@@ -338,6 +343,17 @@ function apply(e, opts = {}) {
       setNow("Appeal packet ready for human review", false);
     }
     if (/approved by reviewer/.test(m)) setNow("Draft approved by the Adversarial Reviewer and the Fact Checker", opts.live);
+  }
+
+  // merit: provisional ratings from planner / policy analyst, then the orchestrator's final verdict
+  if (d.merit) {
+    S.merit = S.merit || {};
+    S.merit[d.final ? "final" : a] = d.merit;
+    const shown = S.merit.final || S.merit.policy_analyst || S.merit.planner;
+    $("sVerdict").textContent = S.merit.final ? shown : `${shown}?`;
+    $("verdictTile").className = `stat wide verdict ${shown}`;
+    $("sVerdictWhy").textContent = S.merit.final ? "final verdict" :
+      `planner: ${S.merit.planner || "…"} · policy analyst: ${S.merit.policy_analyst || "…"}`;
   }
 
   // stats

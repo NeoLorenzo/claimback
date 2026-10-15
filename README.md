@@ -91,7 +91,7 @@ A live agent timeline: the workflow diagram lights up as agents work, handoffs a
 **https://neolorenzo.github.io/claimback/** replays a recorded real run from its agent log, with a link to the finished appeal packet. Pages hosts static files only, so live runs need the local server. To publish a new recording:
 
 ```bash
-python -m claimback export-site <run_id>   # writes docs/; re-run after changing the web page
+python -m claimback export-site <run_id> [...]   # writes docs/; the first run auto-plays; re-run after changing the web page
 ```
 
 The export refuses any case whose documents aren't marked `SYNTHETIC TEST DOCUMENT`, so real patient data can't be published. It also strips local file paths from the log.

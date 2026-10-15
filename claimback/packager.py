@@ -7,8 +7,21 @@ import markdown as md
 
 from . import redact
 
+VERDICT = {
+    "strong": ("Strong case: we recommend appealing",
+               "The plan's own criteria appear to be met, and the insurer's strongest rebuttals are weak."),
+    "possible": ("Possible case: worth appealing, but close the gaps first",
+                 "The appeal can win, but it depends on contestable judgment or documentation that's missing. "
+                 "Fix the items under *Needs your attention* before sending."),
+    "weak": ("Weak case: this appeal is unlikely to succeed",
+             "On the documents provided, the denial appears to apply the plan's terms correctly. A better-worded "
+             "letter won't change that, so the team stopped revising. The draft below is here if you still want "
+             "to appeal, but try the options listed first."),
+}
 
-def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, display, rounds, feedback=None) -> dict:
+
+def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, display, rounds,
+          verdict="possible", feedback=None) -> dict:
     out_dir = state.dir / "output"
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -20,12 +33,30 @@ def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, di
     letter = redact.rehydrate(draft["letter_markdown"], display)
     send_to = redact.rehydrate(f"{facts['appeals_mailing_address']} · Fax: {facts['appeals_fax']}", display)
 
+    headline, summary = VERDICT[verdict]
+    weak = verdict == "weak"
+    alternatives = run_plan["alternatives"]
     lines = [
-        "# Appeal packet",
+        "# Appeal assessment" if weak else "# Appeal packet",
         "",
         "> **DRAFT FOR HUMAN REVIEW.** ClaimBack prepared this draft. It is not legal or medical advice. "
         "Read every statement, confirm it is accurate, then sign and send it yourself.",
         "",
+        f"## Our assessment: {headline}",
+        "",
+        summary,
+        "",
+        f"- **Planner:** {run_plan['merit']} · {run_plan['merit_rationale']}",
+        f"- **Policy Analyst (plan criteria):** {policy['merit']} · {policy['merit_rationale']}",
+        f"- **Adversarial Reviewer (playing the insurer):** {review['score']}/10",
+        "",
+    ]
+    if alternatives:
+        lines += ["### " + ("Better options to try first" if weak else "Also worth doing"), "",
+                  "*Suggestions from the Planner. Unlike the letter, these aren't fact-checked, so confirm "
+                  "products, prices and coverage before relying on them.*", "",
+                  *[f"- {a}" for a in alternatives], ""]
+    lines += [
         "## At a glance",
         "",
         "| Field | Detail |\n|---|---|",
@@ -38,7 +69,7 @@ def build(state, facts, run_plan, policy, evidence, draft, review, factcheck, di
         f"| **Send to** | {send_to} |",
         f"| **Reviewer score** | {review['score']}/10 after {rounds} round(s) · {'approved' if approved else 'open issues, see below'} |",
         "",
-        "## Before you send",
+        "## If you decide to send it" if weak else "## Before you send",
         "",
         "- [ ] Read the whole letter and correct anything that is wrong",
         "- [ ] Sign and date the letter (and have the treating provider co-sign if possible)",

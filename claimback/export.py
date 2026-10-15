@@ -60,7 +60,7 @@ def export_site(run_ids: list[str], out: Path) -> Path:
         listing.append({"id": run_id, "case": case_dir.name, "created": state["created"],
                         "status": state["status"], "has_packet": True})
 
-    listing.sort(key=lambda r: r["created"], reverse=True)
+    # Keep the command-line order: the first run is the one visitors see playing
     (out / "data" / "runs.json").write_text(json.dumps(listing, indent=2), encoding="utf-8")
     shutil.copy(INDEX, out / "index.html")
     (out / ".nojekyll").write_text("", encoding="utf-8")  # serve files as-is

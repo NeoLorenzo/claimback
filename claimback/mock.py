@@ -59,7 +59,9 @@ def respond(agent: str, schema):
             clinical_summary="Type 2 diabetes on basal insulin with recurrent nocturnal level 2 hypoglycemia.",
             missing_information=["Letter of medical necessity from the treating provider"])
     if schema is RunPlan:
-        return RunPlan(denial_category="medical_necessity", appeal_type="standard",
+        return RunPlan(merit="strong", merit_rationale="Denial applied criteria removed in 2026.",
+                       alternatives=["Ask the provider for a letter of medical necessity"],
+                       denial_category="medical_necessity", appeal_type="standard",
                        appeal_type_rationale="No imminent jeopardy documented.",
                        strategy="Show the denial applied criteria that the plan removed on 01/01/2026.",
                        policy_questions=["Which version of MP-DME-031 applies?"],
@@ -72,7 +74,8 @@ def respond(agent: str, schema):
                                          "status": "met", "supporting_fact": "Glargine 32 units nightly",
                                          "source_ids": ["POLICY", "NOTES"]}],
                               discrepancies=["Denial cites the pre-2026 requirement for 3+ daily injections"],
-                              procedural_issues=[], strongest_policy_argument="Criterion I.B.1 is met.")
+                              procedural_issues=[], strongest_policy_argument="Criterion I.B.1 is met.",
+                              merit="strong", merit_rationale="All criteria met.")
     if schema is EvidencePack:
         return EvidencePack(items=[{"source_id": "EV-1", "title": "ADA Standards of Care, Section 7",
                                     "publisher": "American Diabetes Association",

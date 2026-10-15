@@ -5,5 +5,12 @@
     "created": "2026-10-15T09:29:13.784008+00:00",
     "status": "done",
     "has_packet": true
+  },
+  {
+    "id": "test-weak-cgm-v2",
+    "case": "weak-cgm",
+    "created": "2026-10-15T10:24:19.131746+00:00",
+    "status": "done",
+    "has_packet": true
   }
 ]

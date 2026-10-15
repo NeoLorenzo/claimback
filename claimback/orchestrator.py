@@ -16,6 +16,7 @@ from .state import RunState
 
 MAX_ROUNDS = 3  # writer <-> reviewer/fact-checker revision rounds
 APPROVE_SCORE = 8
+HOPELESS_SCORE = 3  # reviewer score at or below which revising stops: polishing won't change the outcome
 
 # Demo mode: make chosen stages fail on their first attempt to show recovery
 CHAOS = os.environ.get("CLAIMBACK_CHAOS") == "1"
@@ -133,6 +134,16 @@ def make_draft_validator(known_sources: set[str], placeholders: set[str]):
     return validate
 
 
+def final_verdict(run_plan: dict, policy: dict, review: dict) -> str:
+    """Combine three independent judgments; any one of them can mark an appeal weak."""
+    ratings = (run_plan["merit"], policy["merit"])
+    if review["score"] <= HOPELESS_SCORE or "weak" in ratings:
+        return "weak"
+    if all(m == "strong" for m in ratings) and review["score"] >= APPROVE_SCORE:
+        return "strong"
+    return "possible"
+
+
 # ---- the run --------------------------------------------------------------------
 def orchestrate(case_dir: Path | None, run_id: str | None = None, stop_after: str | None = None,
                 offline: bool = False, new_run_id: str | None = None) -> Path:
@@ -192,6 +203,7 @@ def _run(state: RunState, case_dir: Path, stop_after: str | None, offline: bool)
     # 2. Planner
     run_plan = run_stage(state, "plan", "planner", lambda fb: agents.plan(facts, fb), **S)
     emit("planner", "info", f"category={run_plan['denial_category']} · appeal={run_plan['appeal_type']}")
+    emit("planner", "info", f"merit: {run_plan['merit']} · {run_plan['merit_rationale']}", merit=run_plan["merit"])
     emit("planner", "info", f"strategy: {run_plan['strategy']}")
     emit("planner", "handoff", f"policy_analyst: {len(run_plan['policy_questions'])} questions · "
                                f"→ evidence_researcher: {len(run_plan['research_questions'])} questions",
@@ -220,6 +232,7 @@ def _run(state: RunState, case_dir: Path, stop_after: str | None, offline: bool)
 
     for d in policy["discrepancies"]:
         emit("policy_analyst", "info", f"discrepancy: {d}")
+    emit("policy_analyst", "info", f"merit: {policy['merit']} · {policy['merit_rationale']}", merit=policy["merit"])
     met = sum(c["status"] == "met" for c in policy["criteria"])
     emit("policy_analyst", "handoff", f"writer: {met}/{len(policy['criteria'])} criteria met", to=["writer"])
     for item in evidence["items"]:
@@ -265,6 +278,10 @@ def _run(state: RunState, case_dir: Path, stop_after: str | None, offline: bool)
         if review["decision"] == "approve" and review["score"] >= APPROVE_SCORE and n_bad == 0:
             emit("orchestrator", "done", f"draft {r} approved by reviewer and fact checker")
             break
+        if review["score"] <= HOPELESS_SCORE:
+            emit("orchestrator", "warn", f"reviewer scored {review['score']}/10 → stopping revisions: the record, "
+                                         "not the wording, is the problem. Packaging an honest assessment")
+            break
         if r < MAX_ROUNDS:
             emit("orchestrator", "loop", f"round {r} not approved → back to writer with "
                                          f"{len(review['required_changes'])} changes + {n_bad} fact problems", to=["writer"], round=r)
@@ -272,10 +289,14 @@ def _run(state: RunState, case_dir: Path, stop_after: str | None, offline: bool)
             emit("orchestrator", "warn", f"round limit ({MAX_ROUNDS}) reached → packaging with "
                                          "open issues flagged for human review")
 
+    verdict = final_verdict(run_plan, policy, review)
+    emit("orchestrator", "info", f"verdict: {verdict} (planner {run_plan['merit']}, policy analyst "
+                                 f"{policy['merit']}, reviewer {review['score']}/10)", merit=verdict, final=True)
+
     # 5. Packager (deterministic: fills identifiers back in locally, builds the packet)
     out_dir = run_stage(state, "package", "packager",
                         lambda fb: packager.build(state, facts, run_plan, policy, evidence, draft,
-                                                  review, factcheck, display, rounds), **S)
+                                                  review, factcheck, display, rounds, verdict), **S)
     state.status = "done"
     state.save()
     emit("orchestrator", "done", f"appeal packet ready: {out_dir['html']}", packet=True)

@@ -79,7 +79,16 @@ def plan(facts: dict, feedback=None) -> dict:
         "the Policy Analyst (about the plan's own criteria and how the denial "
         "applied them) and for the Evidence Researcher (about clinical "
         "guidelines and national coverage standards; no patient identifiers, "
-        "since these go to web search). List the risks that could sink the appeal."
+        "since these go to web search). List the risks that could sink the appeal.\n\n"
+        "Rate the appeal's merit honestly: 'strong' if the record clearly meets "
+        "the plan's criteria or the denial plainly misapplies them; 'possible' if "
+        "it turns on contestable judgment or missing documentation; 'weak' if the "
+        "denial correctly applies the plan's terms to the documented facts. A weak "
+        "rating is useful, not a failure: it saves the patient time and stops the "
+        "team from dressing up a losing argument. In alternatives, list other "
+        "concrete routes to the care (for example asking the provider to document "
+        "something that is actually true, a different benefit or formulary, a "
+        "cash or over-the-counter option, financial assistance, or external review)."
     )
     out = llm.call("planner", system, "Case facts:\n" + as_json(facts) + retry_note(feedback), RunPlan, effort="medium")
     return out.model_dump()
@@ -94,7 +103,10 @@ def policy_analysis(docs: dict[str, str], facts: dict, run_plan: dict, feedback=
         "the denial misreads, misquotes, or applies outdated criteria. Cite "
         "source_ids (DENIAL, POLICY, NOTES) for every criterion. Also note any "
         "procedural problems with the denial (missing appeal rights, wrong "
-        "reviewer specialty, missed deadlines)."
+        "reviewer specialty, missed deadlines). Then rate merit from the criteria "
+        "alone: 'strong' if every required criterion is met or the denial misapplies "
+        "the policy, 'possible' if a required criterion is unclear, 'weak' if a "
+        "required criterion is clearly not met by the documented facts."
     )
     user = (docs_block(docs) + "\n\nCase facts:\n" + as_json(facts)
             + "\n\nPlanner's questions for you:\n" + "\n".join(f"- {q}" for q in run_plan["policy_questions"])

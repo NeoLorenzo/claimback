@@ -42,7 +42,13 @@ class CaseFacts(BaseModel):
 
 
 # ---- Planner --------------------------------------------------------------
+Merit = Literal["strong", "possible", "weak"]
+
+
 class RunPlan(BaseModel):
+    merit: Merit  # honest odds that an appeal succeeds on this record
+    merit_rationale: str
+    alternatives: list[str]  # other routes to the care or coverage, instead of or alongside an appeal
     denial_category: Literal[
         "medical_necessity", "not_a_covered_benefit", "prior_authorization",
         "coding_or_billing", "out_of_network", "other",
@@ -72,6 +78,8 @@ class PolicyAnalysis(BaseModel):
     discrepancies: list[str]  # where the denial misreads or misapplies the policy
     procedural_issues: list[str]
     strongest_policy_argument: str
+    merit: Merit  # judged from the criteria check alone
+    merit_rationale: str
 
 
 # ---- Evidence Researcher --------------------------------------------------
